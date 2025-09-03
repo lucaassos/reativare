@@ -1,0 +1,239 @@
+/* Paleta de Cores Reativare */
+:root {
+    --orange: #ff6600;
+    --dark-grey: #1a1a1a;
+    --medium-grey: #2c2c2c;
+    --light-grey: #f4f4f4;
+    --text-color: #ffffff;
+    --text-dark: #333;
+}
+
+/* Estilos Globais */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--dark-grey);
+    color: var(--text-color);
+}
+
+.container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+h1, h2, h3, h4 {
+    color: var(--orange);
+    margin-bottom: 1rem;
+}
+
+/* Botões */
+.btn {
+    background-color: var(--orange);
+    color: var(--text-color);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #e65c00;
+}
+
+.btn-secondary {
+    background-color: var(--medium-grey);
+}
+
+.btn-secondary:hover {
+    background-color: #444;
+}
+
+.btn-danger {
+    background-color: #c0392b;
+}
+
+.btn-danger:hover {
+    background-color: #a93226;
+}
+
+
+/* Formulários e Inputs */
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #555;
+    background-color: var(--medium-grey);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+/* Página de Login */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-box {
+    background-color: var(--medium-grey);
+    padding: 2.5rem;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.error-message {
+    color: #e74c3c;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+/* Header */
+header {
+    background-color: var(--medium-grey);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Dashboard */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--medium-grey);
+    padding-bottom: 1rem;
+}
+
+.client-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.client-card {
+    background-color: var(--medium-grey);
+    padding: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.client-card .info h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+.client-card .info p {
+    color: #ccc;
+    margin: 5px 0 0;
+}
+
+.client-card .actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+
+/* Página de Treino */
+#client-header {
+    background-color: var(--medium-grey);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+#client-header h2, #client-header p {
+    margin: 0;
+}
+
+#client-header h2 { color: var(--text-color); }
+#client-header p { color: var(--orange); font-weight: bold; }
+
+
+.workout-section {
+    background-color: var(--medium-grey);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.exercise-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.exercise-list th, .exercise-list td {
+    padding: 12px;
+    border-bottom: 1px solid var(--medium-grey);
+    text-align: left;
+}
+
+.exercise-list th {
+    background-color: var(--medium-grey);
+    color: var(--orange);
+}
+
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: var(--medium-grey);
+    margin: 15% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
