@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD (COM BOTÕES ATUALIZADOS) ---
+// --- LÓGICA DO DASHBOARD ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -256,7 +256,8 @@ function initTreinoPage() {
 
     function loadContentForDay(dayId) {
         workoutContent.innerHTML = '';
-        const templateNode = day-template.content.cloneNode(true);
+        // CORREÇÃO AQUI:
+        const templateNode = dayTemplate.content.cloneNode(true);
         
         const exerciseSelect = templateNode.querySelector('.exercise-select');
         exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
