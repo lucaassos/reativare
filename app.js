@@ -8,12 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 initTreinoPage();
             } else if (path.endsWith('exercicios.html')) {
                 initExerciciosPage();
+            } else if (path.endsWith('perfil.html')) { // <-- NOVA ROTA
+                initPerfilPage();
             }
         }
     });
 });
 
-// --- LÓGICA DO DASHBOARD ---
+// --- LÓGICA DO DASHBOARD (COM LINK PARA PERFIL) ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -55,6 +57,7 @@ function initDashboard() {
         snapshot.forEach(doc => {
             const client = doc.data();
             const clientId = doc.id;
+            // CARD ATUALIZADO COM BOTÃO DE PERFIL
             const card = `
                 <div class="client-card">
                     <div class="info">
@@ -62,6 +65,7 @@ function initDashboard() {
                         <p>${client.objetivo}</p>
                     </div>
                     <div class="actions">
+                        <a href="perfil.html?id=${clientId}" class="btn btn-secondary">Ver Perfil</a>
                         <a href="treino.html?id=${clientId}" class="btn">Ver Treino</a>
                         <button class="btn btn-danger" data-id="${clientId}">Excluir</button>
                     </div>
@@ -82,8 +86,67 @@ function initDashboard() {
     });
 }
 
+// --- LÓGICA DA PÁGINA DE PERFIL (NOVA FUNÇÃO) ---
+function initPerfilPage() {
+    const params = new URLSearchParams(window.location.search);
+    const clienteId = params.get('id');
+    if (!clienteId) {
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
+    const profileHeader = document.getElementById('client-profile-header');
+    const profileForm = document.getElementById('profile-form');
+    const nameInput = document.getElementById('profile-name');
+    const objectiveInput = document.getElementById('profile-objective');
+    const notesInput = document.getElementById('profile-notes');
+    const successMessage = document.getElementById('success-message');
+
+    // Carrega os dados do cliente e preenche o formulário
+    db.collection('clientes').doc(clienteId).get().then(doc => {
+        if (doc.exists) {
+            const client = doc.data();
+            profileHeader.innerHTML = `<h2>Perfil de ${client.nome}</h2>`;
+            nameInput.value = client.nome;
+            objectiveInput.value = client.objetivo;
+            notesInput.value = client.observacoes || '';
+        } else {
+            alert('Cliente não encontrado!');
+            window.location.href = 'dashboard.html';
+        }
+    });
+
+    // Salva as alterações no perfil
+    profileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const updatedData = {
+            nome: nameInput.value,
+            objetivo: objectiveInput.value,
+            observacoes: notesInput.value
+        };
+
+        db.collection('clientes').doc(clienteId).update(updatedData)
+            .then(() => {
+                profileHeader.innerHTML = `<h2>Perfil de ${updatedData.nome}</h2>`;
+                successMessage.textContent = 'Perfil atualizado com sucesso!';
+                successMessage.style.opacity = 1;
+                // Esconde a mensagem após alguns segundos
+                setTimeout(() => {
+                    successMessage.style.opacity = 0;
+                }, 3000);
+            })
+            .catch(error => {
+                console.error("Erro ao atualizar perfil:", error);
+                alert("Ocorreu um erro ao salvar. Tente novamente.");
+            });
+    });
+}
+
+
 // --- LÓGICA DA PÁGINA DE BIBLIOTECA DE EXERCÍCIOS ---
 function initExerciciosPage() {
+    // (Esta função continua a mesma, sem alterações)
     const form = document.getElementById('add-base-exercise-form');
     const exerciseListDiv = document.getElementById('base-exercise-list');
 
@@ -129,8 +192,9 @@ function deleteBaseExercise(id) {
 }
 
 
-// --- LÓGICA DA PÁGINA DE TREINO (COM CAMPO CARGA) ---
+// --- LÓGICA DA PÁGINA DE TREINO ---
 function initTreinoPage() {
+    // (Esta função continua a mesma, sem alterações)
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
     if (!clienteId) {
@@ -197,13 +261,12 @@ function initTreinoPage() {
                 return;
             }
 
-            // LÓGICA MODIFICADA
             const exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
                 series: addExerciseForm.querySelector('.exercise-series').value,
                 repeticoes: addExerciseForm.querySelector('.exercise-reps').value,
-                carga: addExerciseForm.querySelector('.exercise-load').value, // <-- Pega a carga
+                carga: addExerciseForm.querySelector('.exercise-load').value,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -217,7 +280,6 @@ function initTreinoPage() {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            // TABELA MODIFICADA
             let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
@@ -226,7 +288,8 @@ function initTreinoPage() {
                         <td>${ex.nomeExercicio}</td>
                         <td>${ex.series}</td>
                         <td>${ex.repeticoes}</td>
-                        <td>${ex.carga || '-'}</td> <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
+                        <td>${ex.carga || '-'}</td>
+                        <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                     </tr>
                 `;
             });
