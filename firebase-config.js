@@ -1,3 +1,4 @@
+
 const firebaseConfig = {
   apiKey: "AIzaSyDiWDy54Gphn2kopi07yGGdbxgKK62bC4s",
   authDomain: "reativare-109ec.firebaseapp.com",
@@ -6,3 +7,9 @@ const firebaseConfig = {
   messagingSenderId: "667339560747",
   appId: "1:667339560747:web:2d36c156df5f5eb2b7576e"
 };
+
+firebase.initializeApp(firebaseConfig);
+
+
+var auth = firebase.auth();
+var db = firebase.firestore();
