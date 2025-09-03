@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD (SEM BOTÃO DE EXCLUIR) ---
+// --- LÓGICA DO DASHBOARD ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -33,7 +33,6 @@ function initDashboard() {
 
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
         const clientData = {
             nome: document.getElementById('client-name').value,
             objetivo: document.getElementById('client-objective').value,
@@ -42,7 +41,6 @@ function initDashboard() {
             observacoes: document.getElementById('client-notes').value,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-
         db.collection('clientes').add(clientData).then(() => {
             modal.style.display = 'none';
             addClientForm.reset();
@@ -58,7 +56,6 @@ function initDashboard() {
         snapshot.forEach(doc => {
             const client = doc.data();
             const clientId = doc.id;
-            // CARD ATUALIZADO SEM O BOTÃO DE EXCLUIR
             const card = `
                 <div class="client-card">
                     <div class="info">
@@ -73,11 +70,10 @@ function initDashboard() {
             `;
             clientList.innerHTML += card;
         });
-        // Lógica de exclusão foi removida daqui
     });
 }
 
-// --- LÓGICA DA PÁGINA DE PERFIL (COM BOTÃO DE EXCLUIR) ---
+// --- LÓGICA DA PÁGINA DE PERFIL ---
 function initPerfilPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -94,9 +90,8 @@ function initPerfilPage() {
     const diagnosisInput = document.getElementById('profile-diagnosis');
     const notesInput = document.getElementById('profile-notes');
     const successMessage = document.getElementById('success-message');
-    const deleteButton = document.getElementById('delete-client-button'); // <-- Pega o novo botão
+    const deleteButton = document.getElementById('delete-client-button');
 
-    // Carrega os dados do cliente
     db.collection('clientes').doc(clienteId).get().then(doc => {
         if (doc.exists) {
             const client = doc.data();
@@ -112,10 +107,8 @@ function initPerfilPage() {
         }
     });
 
-    // Salva as alterações no perfil
     profileForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
         const updatedData = {
             nome: nameInput.value,
             objetivo: objectiveInput.value,
@@ -123,7 +116,6 @@ function initPerfilPage() {
             diagnostico: diagnosisInput.value,
             observacoes: notesInput.value
         };
-
         db.collection('clientes').doc(clienteId).update(updatedData)
             .then(() => {
                 profileHeader.innerHTML = `<h2>Perfil de ${updatedData.nome}</h2>`;
@@ -139,7 +131,6 @@ function initPerfilPage() {
             });
     });
 
-    // NOVA LÓGICA DE EXCLUSÃO
     deleteButton.addEventListener('click', () => {
         const clientName = nameInput.value;
         if (confirm(`ATENÇÃO: Você está prestes a excluir permanentemente o cliente "${clientName}".\n\nTodos os dados, incluindo os treinos, serão perdidos.\n\nDeseja continuar?`)) {
@@ -156,8 +147,7 @@ function initPerfilPage() {
     });
 }
 
-// --- Funções initExerciciosPage e initTreinoPage continuam as mesmas ---
-
+// --- LÓGICA DA PÁGINA DE BIBLIOTECA DE EXERCÍCIOS ---
 function initExerciciosPage() {
     const form = document.getElementById('add-base-exercise-form');
     const exerciseListDiv = document.getElementById('base-exercise-list');
@@ -166,7 +156,6 @@ function initExerciciosPage() {
         e.preventDefault();
         const nome = document.getElementById('base-exercise-name').value;
         const grupo = document.getElementById('base-exercise-group').value;
-
         db.collection('exercicios_base').add({
             nome: nome,
             grupoMuscular: grupo,
@@ -203,6 +192,7 @@ function deleteBaseExercise(id) {
     }
 }
 
+// --- LÓGICA DA PÁGINA DE TREINO (COM ALERTA) ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -264,12 +254,10 @@ function initTreinoPage() {
             const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
             const exerciseBaseId = selectedOption.value;
             const exerciseName = selectedOption.getAttribute('data-name');
-
             if (!exerciseBaseId) {
                 alert("Por favor, selecione um exercício.");
                 return;
             }
-
             const exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
@@ -278,7 +266,6 @@ function initTreinoPage() {
                 carga: addExerciseForm.querySelector('.exercise-load').value,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-
             db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
                 .then(() => addExerciseForm.reset())
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
@@ -289,15 +276,37 @@ function initTreinoPage() {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Ação</th></tr></thead><tbody>`;
+            // TABELA COM LÓGICA DE ALERTA
+            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
+                
+                // --- LÓGICA DO ALERTA ---
+                let alertIconHTML = '';
+                if (ex.createdAt) { // Verifica se o timestamp existe
+                    const exerciseTime = ex.createdAt.toDate(); // Converte para Data JS
+                    const now = new Date();
+                    const diffMinutes = (now.getTime() - exerciseTime.getTime()) / (1000 * 60);
+
+                    if (diffMinutes > 5) {
+                        alertIconHTML = `
+                            <div class="alert-icon" title="Considere aumentar a carga para este exercício.">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                    <path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/>
+                                </svg>
+                                <span class="tooltip">Considere aumentar a carga.</span>
+                            </div>
+                        `;
+                    }
+                }
+                
                 tableHTML += `
                     <tr>
                         <td>${ex.nomeExercicio}</td>
                         <td>${ex.series}</td>
                         <td>${ex.repeticoes}</td>
                         <td>${ex.carga || '-'}</td>
+                        <td class="alert-cell">${alertIconHTML}</td>
                         <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                     </tr>
                 `;
