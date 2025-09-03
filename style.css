@@ -354,3 +354,45 @@ header div {
     from { transform: translateY(-50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+/* Adicionar no final do style.css */
+
+/* --- ZONA DE PERIGO (PÁGINA DE PERFIL) --- */
+.danger-zone {
+    border: 2px solid var(--danger);
+    border-radius: 12px;
+    margin-top: 2.5rem;
+}
+
+.danger-zone h3 {
+    padding: 1rem 2rem;
+    background-color: var(--danger);
+    color: var(--text-primary);
+    border-radius: 9px 9px 0 0;
+    margin: 0;
+}
+
+.danger-zone-content {
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.danger-zone-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Media Query para telas pequenas */
+@media (max-width: 600px) {
+    .danger-zone-content {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: center;
+    }
+    .danger-zone-content p {
+        margin-bottom: 1rem;
+    }
+}
