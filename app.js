@@ -15,18 +15,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD (COM BARRA DE PESQUISA) ---
+// --- LÓGICA DO DASHBOARD ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
     const addClientButton = document.getElementById('add-client-button');
     const closeButton = document.querySelector('.close-button');
     const addClientForm = document.getElementById('add-client-form');
-    const searchBar = document.getElementById('search-bar'); // <-- Pega a barra de pesquisa
+    const searchBar = document.getElementById('search-bar');
 
-    let allClients = []; // <-- Array para guardar todos os clientes
+    let allClients = []; 
 
-    // --- Modal Logic ---
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
     window.onclick = (event) => {
@@ -35,7 +34,6 @@ function initDashboard() {
         }
     };
 
-    // --- Add Client Logic ---
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const clientData = {
@@ -52,25 +50,22 @@ function initDashboard() {
         }).catch(error => console.error("Erro ao adicionar cliente:", error));
     });
 
-    // --- Real-time Data Fetching ---
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
-        allClients = []; // Limpa a lista local
+        allClients = [];
         snapshot.forEach(doc => {
             allClients.push({ id: doc.id, ...doc.data() });
         });
-        renderClients(allClients); // Renderiza a lista completa
+        renderClients(allClients);
     });
     
-    // --- Search Logic ---
     searchBar.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
         const filteredClients = allClients.filter(client => {
             return client.nome.toLowerCase().includes(searchTerm);
         });
-        renderClients(filteredClients); // Renderiza a lista filtrada
+        renderClients(filteredClients);
     });
     
-    // --- Function to Render Clients ---
     function renderClients(clients) {
         clientList.innerHTML = '';
         if (clients.length === 0) {
@@ -266,7 +261,8 @@ function initTreinoPage() {
         const exerciseSelect = templateNode.querySelector('.exercise-select');
         exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
         baseExercises.forEach(ex => {
-            exerciseSelect.innerHTML += `<option value="${doc.id}" data-name="${ex.nome}">${ex.nome}</option>`;
+            // ERRO ESTAVA AQUI: Usava 'doc.id' em vez de 'ex.id'
+            exerciseSelect.innerHTML += `<option value="${ex.id}" data-name="${ex.nome}">${ex.nome}</option>`;
         });
         
         const exerciseListDiv = templateNode.querySelector('.exercise-list');
