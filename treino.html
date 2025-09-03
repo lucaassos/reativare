@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treino | Reativare</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Reativare</h1>
+        <div>
+            <a href="dashboard.html" class="btn btn-secondary">Voltar</a>
+            <button id="logout-button" class="btn btn-secondary">Sair</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="client-header">
+            </div>
+        
+        <div class="workout-section">
+            <h3>Plano de Treino</h3>
+            <form id="add-exercise-form">
+                <h4>Adicionar Novo Exercício</h4>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="exercise-name">Exercício</label>
+                        <input type="text" id="exercise-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="exercise-series">Séries</label>
+                        <input type="text" id="exercise-series" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="exercise-reps">Repetições</label>
+                        <input type="text" id="exercise-reps" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="exercise-notes">Observações</label>
+                        <input type="text" id="exercise-notes">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Adicionar Exercício</button>
+            </form>
+        </div>
+
+        <div id="exercise-list" class="exercise-list">
+            </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
