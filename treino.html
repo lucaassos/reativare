@@ -19,38 +19,54 @@
     </header>
 
     <main class="container">
-        <div id="client-header">
+        <div id="client-header" class="card-section">
             </div>
-        
-        <div class="workout-section">
-            <h3>Plano de Treino</h3>
-            <form id="add-exercise-form">
-                <h4>Adicionar Novo Exercício</h4>
+
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-link active" data-day="segunda">Segunda</button>
+                <button class="tab-link" data-day="terca">Terça</button>
+                <button class="tab-link" data-day="quarta">Quarta</button>
+                <button class="tab-link" data-day="quinta">Quinta</button>
+                <button class="tab-link" data-day="sexta">Sexta</button>
+                <button class="tab-link" data-day="sabado">Sábado</button>
+            </div>
+
+            <div id="workout-content" class="card-section">
+                </div>
+        </div>
+    </main>
+
+    <template id="day-template">
+        <div class="tab-content">
+            <form class="add-exercise-form">
+                <h4>Adicionar Exercício ao Plano</h4>
                 <div class="form-grid">
                     <div class="input-group">
-                        <label for="exercise-name">Exercício</label>
-                        <input type="text" id="exercise-name" required>
+                        <label>Selecione o Exercício</label>
+                        <select class="exercise-select" required>
+                            <option value="">Carregando...</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <label for="exercise-series">Séries</label>
-                        <input type="text" id="exercise-series" required>
+                        <label>Séries</label>
+                        <input type="text" class="exercise-series" required>
                     </div>
                     <div class="input-group">
-                        <label for="exercise-reps">Repetições</label>
-                        <input type="text" id="exercise-reps" required>
+                        <label>Repetições</label>
+                        <input type="text" class="exercise-reps" required>
                     </div>
                     <div class="input-group">
-                        <label for="exercise-notes">Observações</label>
-                        <input type="text" id="exercise-notes">
+                        <label>Observações</label>
+                        <input type="text" class="exercise-notes">
                     </div>
                 </div>
                 <button type="submit" class="btn">Adicionar Exercício</button>
             </form>
+            <div class="exercise-list">
+                </div>
         </div>
-
-        <div id="exercise-list" class="exercise-list">
-            </div>
-    </main>
+    </template>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
