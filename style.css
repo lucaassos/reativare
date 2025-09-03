@@ -79,7 +79,9 @@ h1, h2, h3, h4 {
     font-weight: bold;
 }
 
-.input-group input {
+.input-group input,
+.input-group select,
+.input-group textarea {
     width: 100%;
     padding: 10px;
     border-radius: 5px;
@@ -87,6 +89,7 @@ h1, h2, h3, h4 {
     background-color: var(--medium-grey);
     color: var(--text-color);
     font-size: 1rem;
+    font-family: Arial, sans-serif;
 }
 
 /* Página de Login */
@@ -119,6 +122,10 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+header div {
+    display: flex;
+    gap: 1rem;
 }
 
 /* Dashboard */
@@ -173,7 +180,8 @@ header {
 }
 
 #client-header h2 { color: var(--text-color); }
-#client-header p { color: var(--orange); font-weight: bold; }
+#client-header p { color: #ccc; margin-top: 5px; }
+#client-header p strong { color: var(--orange); }
 
 
 .workout-section {
