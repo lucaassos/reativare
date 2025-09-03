@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Reativare</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Reativare</h1>
+        <button id="logout-button" class="btn btn-secondary">Sair</button>
+    </header>
+
+    <main class="container">
+        <div class="toolbar">
+            <h2>Meus Clientes</h2>
+            <button id="add-client-button" class="btn">Adicionar Cliente</button>
+        </div>
+        <div id="client-list" class="client-list">
+            </div>
+    </main>
+
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Novo Cliente</h2>
+            <form id="add-client-form">
+                <div class="input-group">
+                    <label for="client-name">Nome Completo</label>
+                    <input type="text" id="client-name" required>
+                </div>
+                <div class="input-group">
+                    <label for="client-objective">Objetivo</label>
+                    <input type="text" id="client-objective" required>
+                </div>
+                <button type="submit" class="btn">Salvar Cliente</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
