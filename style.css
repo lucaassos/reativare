@@ -12,6 +12,7 @@
     --text-secondary: #a7a7a7;
     --danger: #e74c3c;
     --danger-dark: #c0392b;
+    --success: #2ecc71;
 }
 
 /* --- ESTILOS GLOBAIS --- */
@@ -118,6 +119,23 @@ h4 { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
     border-color: var(--orange);
 }
 
+/* --- MENSAGENS --- */
+.error-message {
+    color: var(--danger);
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    height: 1rem;
+}
+
+.success-message {
+    color: var(--success);
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    height: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
 /* --- PÁGINA DE LOGIN --- */
 .login-container {
     display: flex;
@@ -144,13 +162,6 @@ h4 { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
 .login-box p {
     color: var(--text-secondary);
     margin-bottom: 2rem;
-}
-
-.error-message {
-    color: var(--danger);
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    height: 1rem;
 }
 
 /* --- HEADER --- */
@@ -214,7 +225,7 @@ header div {
     gap: 0.75rem;
 }
 
-/* --- PÁGINA DE TREINO & EXERCÍCIOS --- */
+/* --- PÁGINA DE TREINO & EXERCÍCIOS & PERFIL --- */
 .card-section {
     background-color: var(--card-bg);
     padding: 2rem;
@@ -223,8 +234,10 @@ header div {
     border: 1px solid var(--border-color);
 }
 
-#client-header {
+#client-header, #client-profile-header {
     margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 #client-header p {
     color: var(--text-secondary);
@@ -237,7 +250,7 @@ header div {
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
 }
 
@@ -305,7 +318,7 @@ header div {
 .tabs-nav {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: -1px; /* Para a borda da aba ativa sobrepor a do container */
+    margin-bottom: -1px;
 }
 
 .tab-link {
