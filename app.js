@@ -129,7 +129,7 @@ function deleteBaseExercise(id) {
 }
 
 
-// --- LÓGICA DA PÁGINA DE TREINO (TOTALMENTE REFEITA) ---
+// --- LÓGICA DA PÁGINA DE TREINO (COM CAMPO CARGA) ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -142,9 +142,8 @@ function initTreinoPage() {
     const tabs = document.querySelectorAll('.tab-link');
     const workoutContent = document.getElementById('workout-content');
     const dayTemplate = document.getElementById('day-template');
-    let baseExercises = []; // Cache para os exercícios da biblioteca
+    let baseExercises = [];
 
-    // Carrega dados do cliente no cabeçalho
     db.collection('clientes').doc(clienteId).get().then(doc => {
         if (doc.exists) {
             const client = doc.data();
@@ -158,16 +157,13 @@ function initTreinoPage() {
         }
     });
 
-    // Carrega todos os exercícios da biblioteca uma vez para usar em todas as abas
     db.collection('exercicios_base').orderBy('nome').get().then(snapshot => {
         snapshot.forEach(doc => {
             baseExercises.push({ id: doc.id, ...doc.data() });
         });
-        // Carrega o conteúdo da primeira aba (Segunda) após os exercícios estarem prontos
         loadContentForDay('segunda');
     });
 
-    // Adiciona o evento de clique para as abas
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
@@ -177,12 +173,10 @@ function initTreinoPage() {
         });
     });
 
-    // Função principal que carrega o conteúdo de uma aba
     function loadContentForDay(dayId) {
-        workoutContent.innerHTML = ''; // Limpa o conteúdo
-        const templateNode = dayTemplate.content.cloneNode(true); // Clona o template
+        workoutContent.innerHTML = '';
+        const templateNode = dayTemplate.content.cloneNode(true);
         
-        // Popula o select com os exercícios da biblioteca
         const exerciseSelect = templateNode.querySelector('.exercise-select');
         exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
         baseExercises.forEach(ex => {
@@ -192,7 +186,6 @@ function initTreinoPage() {
         const exerciseListDiv = templateNode.querySelector('.exercise-list');
         const addExerciseForm = templateNode.querySelector('.add-exercise-form');
 
-        // Adiciona o evento de submit para o formulário da aba atual
         addExerciseForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
@@ -204,28 +197,28 @@ function initTreinoPage() {
                 return;
             }
 
+            // LÓGICA MODIFICADA
             const exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
                 series: addExerciseForm.querySelector('.exercise-series').value,
                 repeticoes: addExerciseForm.querySelector('.exercise-reps').value,
-                observacoes: addExerciseForm.querySelector('.exercise-notes').value,
+                carga: addExerciseForm.querySelector('.exercise-load').value, // <-- Pega a carga
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Salva o exercício DENTRO da subcoleção do dia correto
             db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
                 .then(() => addExerciseForm.reset())
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
         });
 
-        // Carrega e ouve por atualizações nos exercícios DO DIA ATUAL
         db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
             if (snapshot.empty) {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Observações</th><th>Ação</th></tr></thead><tbody>`;
+            // TABELA MODIFICADA
+            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
                 tableHTML += `
@@ -233,15 +226,13 @@ function initTreinoPage() {
                         <td>${ex.nomeExercicio}</td>
                         <td>${ex.series}</td>
                         <td>${ex.repeticoes}</td>
-                        <td>${ex.observacoes}</td>
-                        <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
+                        <td>${ex.carga || '-'}</td> <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                     </tr>
                 `;
             });
             tableHTML += '</tbody></table>';
             exerciseListDiv.innerHTML = tableHTML;
 
-            // Adiciona eventos de clique para os botões de exclusão do dia atual
             exerciseListDiv.querySelectorAll('.btn-danger').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const exerciseId = e.target.getAttribute('data-id');
@@ -250,6 +241,6 @@ function initTreinoPage() {
             });
         });
 
-        workoutContent.appendChild(templateNode); // Adiciona o conteúdo preenchido à página
+        workoutContent.appendChild(templateNode);
     }
 }
