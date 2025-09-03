@@ -13,6 +13,7 @@
     --danger: #e74c3c;
     --danger-dark: #c0392b;
     --success: #2ecc71;
+    --warning: #f1c40f; /* Nova cor para o alerta */
 }
 
 /* --- ESTILOS GLOBAIS --- */
@@ -264,6 +265,7 @@ header div {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
+    vertical-align: middle;
 }
 
 .exercise-list th {
@@ -345,24 +347,12 @@ header div {
     border-top-left-radius: 0;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-/* Adicionar no final do style.css */
-
 /* --- ZONA DE PERIGO (PÁGINA DE PERFIL) --- */
 .danger-zone {
     border: 2px solid var(--danger);
     border-radius: 12px;
     margin-top: 2.5rem;
 }
-
 .danger-zone h3 {
     padding: 1rem 2rem;
     background-color: var(--danger);
@@ -370,7 +360,6 @@ header div {
     border-radius: 9px 9px 0 0;
     margin: 0;
 }
-
 .danger-zone-content {
     padding: 2rem;
     display: flex;
@@ -378,11 +367,59 @@ header div {
     align-items: center;
     gap: 2rem;
 }
-
 .danger-zone-content p {
     color: var(--text-secondary);
     font-size: 0.9rem;
     margin: 0;
+}
+
+/* --- ÍCONE DE ALERTA E TOOLTIP --- */
+.alert-icon {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+.alert-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: var(--warning);
+    animation: pulse 2s infinite ease-in-out;
+}
+.alert-icon .tooltip {
+    visibility: hidden;
+    width: 220px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -110px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+.alert-icon:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 /* Media Query para telas pequenas */
