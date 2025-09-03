@@ -15,14 +15,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD ---
+// --- LÓGICA DO DASHBOARD (COM BARRA DE PESQUISA) ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
     const addClientButton = document.getElementById('add-client-button');
     const closeButton = document.querySelector('.close-button');
     const addClientForm = document.getElementById('add-client-form');
+    const searchBar = document.getElementById('search-bar'); // <-- Pega a barra de pesquisa
 
+    let allClients = []; // <-- Array para guardar todos os clientes
+
+    // --- Modal Logic ---
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
     window.onclick = (event) => {
@@ -31,6 +35,7 @@ function initDashboard() {
         }
     };
 
+    // --- Add Client Logic ---
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const clientData = {
@@ -47,15 +52,32 @@ function initDashboard() {
         }).catch(error => console.error("Erro ao adicionar cliente:", error));
     });
 
+    // --- Real-time Data Fetching ---
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
+        allClients = []; // Limpa a lista local
+        snapshot.forEach(doc => {
+            allClients.push({ id: doc.id, ...doc.data() });
+        });
+        renderClients(allClients); // Renderiza a lista completa
+    });
+    
+    // --- Search Logic ---
+    searchBar.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredClients = allClients.filter(client => {
+            return client.nome.toLowerCase().includes(searchTerm);
+        });
+        renderClients(filteredClients); // Renderiza a lista filtrada
+    });
+    
+    // --- Function to Render Clients ---
+    function renderClients(clients) {
         clientList.innerHTML = '';
-         if (snapshot.empty) {
-            clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente cadastrado. Clique em "Adicionar Cliente" para começar.</p>`;
+        if (clients.length === 0) {
+            clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente encontrado.</p>`;
             return;
         }
-        snapshot.forEach(doc => {
-            const client = doc.data();
-            const clientId = doc.id;
+        clients.forEach(client => {
             const card = `
                 <div class="client-card">
                     <div class="info">
@@ -63,15 +85,16 @@ function initDashboard() {
                         <p>${client.objetivo}</p>
                     </div>
                     <div class="actions">
-                        <a href="perfil.html?id=${clientId}" class="btn btn-secondary">Ver Perfil</a>
-                        <a href="treino.html?id=${clientId}" class="btn">Ver Treino</a>
+                        <a href="perfil.html?id=${client.id}" class="btn btn-secondary">Ver Perfil</a>
+                        <a href="treino.html?id=${client.id}" class="btn">Ver Treino</a>
                     </div>
                 </div>
             `;
             clientList.innerHTML += card;
         });
-    });
+    }
 }
+
 
 // --- LÓGICA DA PÁGINA DE PERFIL ---
 function initPerfilPage() {
@@ -192,7 +215,7 @@ function deleteBaseExercise(id) {
     }
 }
 
-// --- LÓGICA DA PÁGINA DE TREINO (COM ALERTA) ---
+// --- LÓGICA DA PÁGINA DE TREINO ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -243,7 +266,7 @@ function initTreinoPage() {
         const exerciseSelect = templateNode.querySelector('.exercise-select');
         exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
         baseExercises.forEach(ex => {
-            exerciseSelect.innerHTML += `<option value="${ex.id}" data-name="${ex.nome}">${ex.nome}</option>`;
+            exerciseSelect.innerHTML += `<option value="${doc.id}" data-name="${ex.nome}">${ex.nome}</option>`;
         });
         
         const exerciseListDiv = templateNode.querySelector('.exercise-list');
@@ -276,15 +299,13 @@ function initTreinoPage() {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            // TABELA COM LÓGICA DE ALERTA
             let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
                 
-                // --- LÓGICA DO ALERTA ---
                 let alertIconHTML = '';
-                if (ex.createdAt) { // Verifica se o timestamp existe
-                    const exerciseTime = ex.createdAt.toDate(); // Converte para Data JS
+                if (ex.createdAt) {
+                    const exerciseTime = ex.createdAt.toDate();
                     const now = new Date();
                     const diffMinutes = (now.getTime() - exerciseTime.getTime()) / (1000 * 60);
 
