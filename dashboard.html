@@ -9,7 +9,10 @@
 <body>
     <header>
         <h1>Reativare</h1>
-        <button id="logout-button" class="btn btn-secondary">Sair</button>
+        <div>
+            <a href="exercicios.html" class="btn btn-secondary">Biblioteca de Exercícios</a>
+            <button id="logout-button" class="btn btn-secondary">Sair</button>
+        </div>
     </header>
 
     <main class="container">
@@ -33,6 +36,10 @@
                 <div class="input-group">
                     <label for="client-objective">Objetivo</label>
                     <input type="text" id="client-objective" required>
+                </div>
+                <div class="input-group">
+                    <label for="client-notes">Observações Iniciais</label>
+                    <textarea id="client-notes" rows="3"></textarea>
                 </div>
                 <button type="submit" class="btn">Salvar Cliente</button>
             </form>
