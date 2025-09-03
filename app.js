@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD ---
+// --- LÓGICA DO DASHBOARD (COM BOTÕES ATUALIZADOS) ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -81,7 +81,7 @@ function initDashboard() {
                     </div>
                     <div class="actions">
                         <a href="perfil.html?id=${client.id}" class="btn btn-secondary">Ver Perfil</a>
-                        <a href="treino.html?id=${client.id}" class="btn">Ver Treino</a>
+                        <a href="treino.html?id=${client.id}" class="btn btn-outline">Ver Treino</a>
                     </div>
                 </div>
             `;
@@ -256,12 +256,11 @@ function initTreinoPage() {
 
     function loadContentForDay(dayId) {
         workoutContent.innerHTML = '';
-        const templateNode = dayTemplate.content.cloneNode(true);
+        const templateNode = day-template.content.cloneNode(true);
         
         const exerciseSelect = templateNode.querySelector('.exercise-select');
         exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
         baseExercises.forEach(ex => {
-            // ERRO ESTAVA AQUI: Usava 'doc.id' em vez de 'ex.id'
             exerciseSelect.innerHTML += `<option value="${ex.id}" data-name="${ex.nome}">${ex.nome}</option>`;
         });
         
