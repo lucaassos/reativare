@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     auth.onAuthStateChanged(user => {
         if (user) {
-            // O usuário está logado, podemos executar a lógica da página
-            if (window.location.pathname.endsWith('dashboard.html')) {
+            const path = window.location.pathname;
+            if (path.endsWith('dashboard.html')) {
                 initDashboard();
-            } else if (window.location.pathname.endsWith('treino.html')) {
+            } else if (path.endsWith('treino.html')) {
                 initTreinoPage();
+            } else if (path.endsWith('exercicios.html')) {
+                initExerciciosPage();
             }
         }
     });
@@ -19,7 +21,6 @@ function initDashboard() {
     const closeButton = document.querySelector('.close-button');
     const addClientForm = document.getElementById('add-client-form');
 
-    // Abrir e fechar modal
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
     window.onclick = (event) => {
@@ -28,15 +29,16 @@ function initDashboard() {
         }
     };
 
-    // Adicionar cliente
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const clientName = document.getElementById('client-name').value;
         const clientObjective = document.getElementById('client-objective').value;
+        const clientNotes = document.getElementById('client-notes').value;
 
         db.collection('clientes').add({
             nome: clientName,
             objetivo: clientObjective,
+            observacoes: clientNotes,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             modal.style.display = 'none';
@@ -44,9 +46,12 @@ function initDashboard() {
         }).catch(error => console.error("Erro ao adicionar cliente:", error));
     });
 
-    // Carregar e ouvir por atualizações na lista de clientes
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
-        clientList.innerHTML = ''; // Limpa a lista para redesenhar
+        clientList.innerHTML = '';
+        if (snapshot.empty) {
+            clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente cadastrado. Clique em "Adicionar Cliente" para começar.</p>`;
+            return;
+        }
         snapshot.forEach(doc => {
             const client = doc.data();
             const clientId = doc.id;
@@ -65,17 +70,62 @@ function initDashboard() {
             clientList.innerHTML += card;
         });
 
-        // Adicionar eventos de clique para os botões de exclusão
         document.querySelectorAll('.btn-danger').forEach(button => {
             button.addEventListener('click', (e) => {
                 const id = e.target.getAttribute('data-id');
-                if (confirm('Tem certeza que deseja excluir este cliente e todos os seus treinos?')) {
+                if (confirm('Tem certeza que deseja excluir este cliente?')) {
                     db.collection('clientes').doc(id).delete()
                         .catch(error => console.error("Erro ao excluir cliente:", error));
                 }
             });
         });
     });
+}
+
+// --- LÓGICA DA PÁGINA DE BIBLIOTECA DE EXERCÍCIOS ---
+function initExerciciosPage() {
+    const form = document.getElementById('add-base-exercise-form');
+    const exerciseListDiv = document.getElementById('base-exercise-list');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        const nome = document.getElementById('base-exercise-name').value;
+        const grupo = document.getElementById('base-exercise-group').value;
+
+        db.collection('exercicios_base').add({
+            nome: nome,
+            grupoMuscular: grupo,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            form.reset();
+        }).catch(error => console.error("Erro ao salvar exercício:", error));
+    });
+
+    db.collection('exercicios_base').orderBy('nome').onSnapshot(snapshot => {
+        if (snapshot.empty) {
+            exerciseListDiv.innerHTML = "<p>Nenhum exercício na biblioteca.</p>";
+            return;
+        }
+        let html = '<table><thead><tr><th>Exercício</th><th>Grupo Muscular</th><th>Ação</th></tr></thead><tbody>';
+        snapshot.forEach(doc => {
+            const ex = doc.data();
+            html += `
+                <tr>
+                    <td>${ex.nome}</td>
+                    <td>${ex.grupoMuscular}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteBaseExercise('${doc.id}')">Excluir</button></td>
+                </tr>
+            `;
+        });
+        html += '</tbody></table>';
+        exerciseListDiv.innerHTML = html;
+    });
+}
+
+function deleteBaseExercise(id) {
+    if (confirm('Tem certeza que deseja excluir este exercício da biblioteca?')) {
+        db.collection('exercicios_base').doc(id).delete();
+    }
 }
 
 // --- LÓGICA DA PÁGINA DE TREINO ---
@@ -91,25 +141,44 @@ function initTreinoPage() {
     const clientHeader = document.getElementById('client-header');
     const addExerciseForm = document.getElementById('add-exercise-form');
     const exerciseList = document.getElementById('exercise-list');
+    const exerciseSelect = document.getElementById('exercise-select');
 
-    // Carregar dados do cliente
+    db.collection('exercicios_base').orderBy('nome').get().then(snapshot => {
+        exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
+        snapshot.forEach(doc => {
+            const ex = doc.data();
+            exerciseSelect.innerHTML += `<option value="${doc.id}" data-name="${ex.nome}">${ex.nome}</option>`;
+        });
+    });
+
     db.collection('clientes').doc(clienteId).get().then(doc => {
         if (doc.exists) {
             const client = doc.data();
             clientHeader.innerHTML = `
                 <h2>${client.nome}</h2>
-                <p>Objetivo: ${client.objetivo}</p>
+                <p><strong>Objetivo:</strong> ${client.objetivo}</p>
+                <p><strong>Observações:</strong> ${client.observacoes || 'Nenhuma observação.'}</p>
             `;
         } else {
             console.error("Cliente não encontrado!");
         }
     });
 
-    // Adicionar exercício
     addExerciseForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        
+        const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
+        const exerciseBaseId = selectedOption.value;
+        const exerciseName = selectedOption.getAttribute('data-name');
+
+        if (!exerciseBaseId) {
+            alert("Por favor, selecione um exercício.");
+            return;
+        }
+        
         const exerciseData = {
-            nome: document.getElementById('exercise-name').value,
+            exercicioBaseId: exerciseBaseId,
+            nomeExercicio: exerciseName,
             series: document.getElementById('exercise-series').value,
             repeticoes: document.getElementById('exercise-reps').value,
             observacoes: document.getElementById('exercise-notes').value,
@@ -118,13 +187,12 @@ function initTreinoPage() {
 
         db.collection('clientes').doc(clienteId).collection('exercicios').add(exerciseData)
             .then(() => addExerciseForm.reset())
-            .catch(error => console.error("Erro ao adicionar exercício:", error));
+            .catch(error => console.error("Erro ao adicionar exercício ao plano:", error));
     });
 
-    // Carregar e ouvir por atualizações nos exercícios
     db.collection('clientes').doc(clienteId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
         if (snapshot.empty) {
-            exerciseList.innerHTML = "<p>Nenhum exercício cadastrado ainda.</p>";
+            exerciseList.innerHTML = "<p>Nenhum exercício cadastrado para este cliente.</p>";
             return;
         }
 
@@ -143,22 +211,20 @@ function initTreinoPage() {
         `;
         snapshot.forEach(doc => {
             const exercise = doc.data();
-            const exerciseId = doc.id;
             tableHTML += `
                 <tr>
-                    <td>${exercise.nome}</td>
+                    <td>${exercise.nomeExercicio}</td>
                     <td>${exercise.series}</td>
                     <td>${exercise.repeticoes}</td>
                     <td>${exercise.observacoes}</td>
-                    <td><button class="btn btn-danger btn-sm" data-id="${exerciseId}">Excluir</button></td>
+                    <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                 </tr>
             `;
         });
         tableHTML += '</tbody></table>';
         exerciseList.innerHTML = tableHTML;
 
-        // Adicionar eventos de clique para os botões de exclusão de exercício
-        document.querySelectorAll('.btn-danger').forEach(button => {
+        document.querySelectorAll('#exercise-list .btn-danger').forEach(button => {
             button.addEventListener('click', (e) => {
                 const id = e.target.getAttribute('data-id');
                 db.collection('clientes').doc(clienteId).collection('exercicios').doc(id).delete()
