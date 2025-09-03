@@ -8,14 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 initTreinoPage();
             } else if (path.endsWith('exercicios.html')) {
                 initExerciciosPage();
-            } else if (path.endsWith('perfil.html')) { // <-- NOVA ROTA
+            } else if (path.endsWith('perfil.html')) {
                 initPerfilPage();
             }
         }
     });
 });
 
-// --- LÓGICA DO DASHBOARD (COM LINK PARA PERFIL) ---
+// --- LÓGICA DO DASHBOARD (COM NOVOS CAMPOS) ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -33,16 +33,18 @@ function initDashboard() {
 
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const clientName = document.getElementById('client-name').value;
-        const clientObjective = document.getElementById('client-objective').value;
-        const clientNotes = document.getElementById('client-notes').value;
-
-        db.collection('clientes').add({
-            nome: clientName,
-            objetivo: clientObjective,
-            observacoes: clientNotes,
+        
+        // Coleta os dados do formulário, incluindo os novos campos
+        const clientData = {
+            nome: document.getElementById('client-name').value,
+            objetivo: document.getElementById('client-objective').value,
+            queixas: document.getElementById('client-complaints').value,
+            diagnostico: document.getElementById('client-diagnosis').value,
+            observacoes: document.getElementById('client-notes').value,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        };
+
+        db.collection('clientes').add(clientData).then(() => {
             modal.style.display = 'none';
             addClientForm.reset();
         }).catch(error => console.error("Erro ao adicionar cliente:", error));
@@ -57,7 +59,6 @@ function initDashboard() {
         snapshot.forEach(doc => {
             const client = doc.data();
             const clientId = doc.id;
-            // CARD ATUALIZADO COM BOTÃO DE PERFIL
             const card = `
                 <div class="client-card">
                     <div class="info">
@@ -86,7 +87,7 @@ function initDashboard() {
     });
 }
 
-// --- LÓGICA DA PÁGINA DE PERFIL (NOVA FUNÇÃO) ---
+// --- LÓGICA DA PÁGINA DE PERFIL (COM NOVOS CAMPOS) ---
 function initPerfilPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -99,6 +100,8 @@ function initPerfilPage() {
     const profileForm = document.getElementById('profile-form');
     const nameInput = document.getElementById('profile-name');
     const objectiveInput = document.getElementById('profile-objective');
+    const complaintsInput = document.getElementById('profile-complaints'); // Novo
+    const diagnosisInput = document.getElementById('profile-diagnosis'); // Novo
     const notesInput = document.getElementById('profile-notes');
     const successMessage = document.getElementById('success-message');
 
@@ -109,6 +112,8 @@ function initPerfilPage() {
             profileHeader.innerHTML = `<h2>Perfil de ${client.nome}</h2>`;
             nameInput.value = client.nome;
             objectiveInput.value = client.objetivo;
+            complaintsInput.value = client.queixas || ''; // Novo
+            diagnosisInput.value = client.diagnostico || ''; // Novo
             notesInput.value = client.observacoes || '';
         } else {
             alert('Cliente não encontrado!');
@@ -123,6 +128,8 @@ function initPerfilPage() {
         const updatedData = {
             nome: nameInput.value,
             objetivo: objectiveInput.value,
+            queixas: complaintsInput.value, // Novo
+            diagnostico: diagnosisInput.value, // Novo
             observacoes: notesInput.value
         };
 
@@ -131,7 +138,6 @@ function initPerfilPage() {
                 profileHeader.innerHTML = `<h2>Perfil de ${updatedData.nome}</h2>`;
                 successMessage.textContent = 'Perfil atualizado com sucesso!';
                 successMessage.style.opacity = 1;
-                // Esconde a mensagem após alguns segundos
                 setTimeout(() => {
                     successMessage.style.opacity = 0;
                 }, 3000);
@@ -146,7 +152,7 @@ function initPerfilPage() {
 
 // --- LÓGICA DA PÁGINA DE BIBLIOTECA DE EXERCÍCIOS ---
 function initExerciciosPage() {
-    // (Esta função continua a mesma, sem alterações)
+    // (Esta função continua a mesma)
     const form = document.getElementById('add-base-exercise-form');
     const exerciseListDiv = document.getElementById('base-exercise-list');
 
@@ -194,7 +200,7 @@ function deleteBaseExercise(id) {
 
 // --- LÓGICA DA PÁGINA DE TREINO ---
 function initTreinoPage() {
-    // (Esta função continua a mesma, sem alterações)
+    // (Esta função continua a mesma)
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
     if (!clienteId) {
