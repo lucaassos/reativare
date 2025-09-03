@@ -210,7 +210,7 @@ function deleteBaseExercise(id) {
     }
 }
 
-// --- LÓGICA DA PÁGINA DE TREINO ---
+// --- LÓGICA DA PÁGINA DE TREINO (COM ABA DO DIA ATUAL) ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -242,7 +242,22 @@ function initTreinoPage() {
         snapshot.forEach(doc => {
             baseExercises.push({ id: doc.id, ...doc.data() });
         });
-        loadContentForDay('segunda');
+        
+        // --- LÓGICA PARA ABRIR NO DIA ATUAL ---
+        const dayMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const todayIndex = new Date().getDay();
+        const todayName = dayMap[todayIndex];
+
+        // Ativa a aba do dia atual
+        const todayTab = document.querySelector(`.tab-link[data-day="${todayName}"]`);
+        if (todayTab) {
+            todayTab.classList.add('active');
+        } else {
+            document.querySelector('.tab-link[data-day="segunda"]').classList.add('active'); // Fallback para segunda
+        }
+        
+        // Carrega o conteúdo do dia atual
+        loadContentForDay(todayName);
     });
 
     tabs.forEach(tab => {
@@ -256,7 +271,6 @@ function initTreinoPage() {
 
     function loadContentForDay(dayId) {
         workoutContent.innerHTML = '';
-        // CORREÇÃO AQUI:
         const templateNode = dayTemplate.content.cloneNode(true);
         
         const exerciseSelect = templateNode.querySelector('.exercise-select');
