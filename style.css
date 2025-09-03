@@ -13,7 +13,7 @@
     --danger: #e74c3c;
     --danger-dark: #c0392b;
     --success: #2ecc71;
-    --warning: #f1c40f; /* Nova cor para o alerta */
+    --warning: #f1c40f;
 }
 
 /* --- ESTILOS GLOBAIS --- */
@@ -155,14 +155,15 @@ h4 { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
     border: 1px solid var(--border-color);
 }
 
-.login-box h1 {
-    color: var(--orange);
+/* NOVOS ESTILOS PARA AS LOGOS DO LOGIN */
+.login-logo-main {
+    max-width: 250px;
     margin-bottom: 0.5rem;
 }
 
-.login-box p {
-    color: var(--text-secondary);
-    margin-bottom: 2rem;
+.login-logo-sub {
+    max-width: 180px;
+    margin-bottom: 2.5rem;
 }
 
 /* --- HEADER --- */
@@ -174,8 +175,18 @@ header {
     align-items: center;
     border-bottom: 1px solid var(--border-color);
 }
-header h1 {
+/* NOVO ESTILO PARA A LOGO NO HEADER */
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.header-logo img {
+    height: 35px; /* Ajuste a altura conforme necessário */
+}
+.header-logo h1 {
     color: var(--orange);
+    margin: 0;
 }
 header div {
     display: flex;
@@ -183,22 +194,18 @@ header div {
 }
 
 /* --- DASHBOARD & LISTAS --- */
-/* Adicionar este bloco dentro da seção DASHBOARD & LISTAS no style.css */
-
 .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas pequenas */
+    flex-wrap: wrap; 
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
-
 .search-container {
-    flex-grow: 1; /* Faz a barra de pesquisa ocupar o espaço disponível */
+    flex-grow: 1; 
     display: flex;
 }
-
 #search-bar {
     width: 100%;
     max-width: 400px;
@@ -211,30 +218,15 @@ header div {
     font-family: 'Poppins', sans-serif;
     transition: all 0.2s ease;
 }
-
 #search-bar:focus {
     outline: none;
     border-color: var(--orange);
     box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
 }
-
 .client-list {
     display: grid;
     gap: 1.5rem;
 }
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.client-list {
-    display: grid;
-    gap: 1.5rem;
-}
-
 .client-card {
     background-color: var(--card-bg);
     padding: 1.5rem;
@@ -245,12 +237,10 @@ header div {
     border: 1px solid var(--border-color);
     transition: all 0.2s ease-in-out;
 }
-
 .client-card:hover {
     transform: translateY(-4px);
     border-color: var(--orange);
 }
-
 .client-card .info h3 {
     margin: 0 0 5px 0;
     font-weight: 600;
@@ -260,7 +250,6 @@ header div {
     margin: 0;
     font-size: 0.9rem;
 }
-
 .client-card .actions {
     display: flex;
     gap: 0.75rem;
@@ -274,7 +263,6 @@ header div {
     margin-bottom: 2.5rem;
     border: 1px solid var(--border-color);
 }
-
 #client-header, #client-profile-header {
     margin-bottom: 2.5rem;
     padding-bottom: 1.5rem;
@@ -288,26 +276,22 @@ header div {
     color: var(--text-primary);
     font-weight: 500;
 }
-
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
 }
-
 .exercise-list table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 2.5rem;
 }
-
 .exercise-list th, .exercise-list td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
     vertical-align: middle;
 }
-
 .exercise-list th {
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -328,7 +312,6 @@ header div {
     background-color: rgba(0,0,0,0.8);
     animation: fadeIn 0.3s ease;
 }
-
 .modal-content {
     background-color: var(--card-bg);
     margin: 10% auto;
@@ -340,7 +323,6 @@ header div {
     border: 1px solid var(--border-color);
     animation: slideIn 0.4s ease;
 }
-
 .close-button {
     color: var(--text-secondary);
     position: absolute;
@@ -351,7 +333,6 @@ header div {
     cursor: pointer;
     transition: color 0.2s ease;
 }
-
 .close-button:hover {
     color: var(--text-primary);
 }
@@ -362,7 +343,6 @@ header div {
     gap: 0.5rem;
     margin-bottom: -1px;
 }
-
 .tab-link {
     padding: 10px 20px;
     cursor: pointer;
@@ -374,14 +354,12 @@ header div {
     font-weight: 500;
     transition: all 0.2s ease;
 }
-
 .tab-link.active {
     background-color: var(--card-bg);
     color: var(--orange);
     border-color: var(--border-color);
     border-bottom: 1px solid var(--card-bg);
 }
-
 #workout-content {
     margin-top: 0;
     border-top-left-radius: 0;
