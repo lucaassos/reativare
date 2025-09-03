@@ -48,7 +48,7 @@ function initDashboard() {
 
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
         clientList.innerHTML = '';
-        if (snapshot.empty) {
+         if (snapshot.empty) {
             clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente cadastrado. Clique em "Adicionar Cliente" para começar.</p>`;
             return;
         }
@@ -128,29 +128,23 @@ function deleteBaseExercise(id) {
     }
 }
 
-// --- LÓGICA DA PÁGINA DE TREINO ---
+
+// --- LÓGICA DA PÁGINA DE TREINO (TOTALMENTE REFEITA) ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
-
     if (!clienteId) {
         window.location.href = 'dashboard.html';
         return;
     }
 
     const clientHeader = document.getElementById('client-header');
-    const addExerciseForm = document.getElementById('add-exercise-form');
-    const exerciseList = document.getElementById('exercise-list');
-    const exerciseSelect = document.getElementById('exercise-select');
+    const tabs = document.querySelectorAll('.tab-link');
+    const workoutContent = document.getElementById('workout-content');
+    const dayTemplate = document.getElementById('day-template');
+    let baseExercises = []; // Cache para os exercícios da biblioteca
 
-    db.collection('exercicios_base').orderBy('nome').get().then(snapshot => {
-        exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
-        snapshot.forEach(doc => {
-            const ex = doc.data();
-            exerciseSelect.innerHTML += `<option value="${doc.id}" data-name="${ex.nome}">${ex.nome}</option>`;
-        });
-    });
-
+    // Carrega dados do cliente no cabeçalho
     db.collection('clientes').doc(clienteId).get().then(doc => {
         if (doc.exists) {
             const client = doc.data();
@@ -164,72 +158,98 @@ function initTreinoPage() {
         }
     });
 
-    addExerciseForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
-        const exerciseBaseId = selectedOption.value;
-        const exerciseName = selectedOption.getAttribute('data-name');
-
-        if (!exerciseBaseId) {
-            alert("Por favor, selecione um exercício.");
-            return;
-        }
-        
-        const exerciseData = {
-            exercicioBaseId: exerciseBaseId,
-            nomeExercicio: exerciseName,
-            series: document.getElementById('exercise-series').value,
-            repeticoes: document.getElementById('exercise-reps').value,
-            observacoes: document.getElementById('exercise-notes').value,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        db.collection('clientes').doc(clienteId).collection('exercicios').add(exerciseData)
-            .then(() => addExerciseForm.reset())
-            .catch(error => console.error("Erro ao adicionar exercício ao plano:", error));
+    // Carrega todos os exercícios da biblioteca uma vez para usar em todas as abas
+    db.collection('exercicios_base').orderBy('nome').get().then(snapshot => {
+        snapshot.forEach(doc => {
+            baseExercises.push({ id: doc.id, ...doc.data() });
+        });
+        // Carrega o conteúdo da primeira aba (Segunda) após os exercícios estarem prontos
+        loadContentForDay('segunda');
     });
 
-    db.collection('clientes').doc(clienteId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
-        if (snapshot.empty) {
-            exerciseList.innerHTML = "<p>Nenhum exercício cadastrado para este cliente.</p>";
-            return;
-        }
-
-        let tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Exercício</th>
-                        <th>Séries</th>
-                        <th>Repetições</th>
-                        <th>Observações</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        snapshot.forEach(doc => {
-            const exercise = doc.data();
-            tableHTML += `
-                <tr>
-                    <td>${exercise.nomeExercicio}</td>
-                    <td>${exercise.series}</td>
-                    <td>${exercise.repeticoes}</td>
-                    <td>${exercise.observacoes}</td>
-                    <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
-                </tr>
-            `;
+    // Adiciona o evento de clique para as abas
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const dayId = tab.getAttribute('data-day');
+            loadContentForDay(dayId);
         });
-        tableHTML += '</tbody></table>';
-        exerciseList.innerHTML = tableHTML;
+    });
 
-        document.querySelectorAll('#exercise-list .btn-danger').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
-                db.collection('clientes').doc(clienteId).collection('exercicios').doc(id).delete()
-                    .catch(error => console.error("Erro ao excluir exercício:", error));
+    // Função principal que carrega o conteúdo de uma aba
+    function loadContentForDay(dayId) {
+        workoutContent.innerHTML = ''; // Limpa o conteúdo
+        const templateNode = dayTemplate.content.cloneNode(true); // Clona o template
+        
+        // Popula o select com os exercícios da biblioteca
+        const exerciseSelect = templateNode.querySelector('.exercise-select');
+        exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
+        baseExercises.forEach(ex => {
+            exerciseSelect.innerHTML += `<option value="${ex.id}" data-name="${ex.nome}">${ex.nome}</option>`;
+        });
+        
+        const exerciseListDiv = templateNode.querySelector('.exercise-list');
+        const addExerciseForm = templateNode.querySelector('.add-exercise-form');
+
+        // Adiciona o evento de submit para o formulário da aba atual
+        addExerciseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
+            const exerciseBaseId = selectedOption.value;
+            const exerciseName = selectedOption.getAttribute('data-name');
+
+            if (!exerciseBaseId) {
+                alert("Por favor, selecione um exercício.");
+                return;
+            }
+
+            const exerciseData = {
+                exercicioBaseId: exerciseBaseId,
+                nomeExercicio: exerciseName,
+                series: addExerciseForm.querySelector('.exercise-series').value,
+                repeticoes: addExerciseForm.querySelector('.exercise-reps').value,
+                observacoes: addExerciseForm.querySelector('.exercise-notes').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Salva o exercício DENTRO da subcoleção do dia correto
+            db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
+                .then(() => addExerciseForm.reset())
+                .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
+        });
+
+        // Carrega e ouve por atualizações nos exercícios DO DIA ATUAL
+        db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
+                return;
+            }
+            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Observações</th><th>Ação</th></tr></thead><tbody>`;
+            snapshot.forEach(doc => {
+                const ex = doc.data();
+                tableHTML += `
+                    <tr>
+                        <td>${ex.nomeExercicio}</td>
+                        <td>${ex.series}</td>
+                        <td>${ex.repeticoes}</td>
+                        <td>${ex.observacoes}</td>
+                        <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
+                    </tr>
+                `;
+            });
+            tableHTML += '</tbody></table>';
+            exerciseListDiv.innerHTML = tableHTML;
+
+            // Adiciona eventos de clique para os botões de exclusão do dia atual
+            exerciseListDiv.querySelectorAll('.btn-danger').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const exerciseId = e.target.getAttribute('data-id');
+                    db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').doc(exerciseId).delete();
+                });
             });
         });
-    });
+
+        workoutContent.appendChild(templateNode); // Adiciona o conteúdo preenchido à página
+    }
 }
