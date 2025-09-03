@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- LÓGICA DO DASHBOARD (COM NOVOS CAMPOS) ---
+// --- LÓGICA DO DASHBOARD (SEM BOTÃO DE EXCLUIR) ---
 function initDashboard() {
     const clientList = document.getElementById('client-list');
     const modal = document.getElementById('client-modal');
@@ -34,7 +34,6 @@ function initDashboard() {
     addClientForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        // Coleta os dados do formulário, incluindo os novos campos
         const clientData = {
             nome: document.getElementById('client-name').value,
             objetivo: document.getElementById('client-objective').value,
@@ -59,6 +58,7 @@ function initDashboard() {
         snapshot.forEach(doc => {
             const client = doc.data();
             const clientId = doc.id;
+            // CARD ATUALIZADO SEM O BOTÃO DE EXCLUIR
             const card = `
                 <div class="client-card">
                     <div class="info">
@@ -68,26 +68,16 @@ function initDashboard() {
                     <div class="actions">
                         <a href="perfil.html?id=${clientId}" class="btn btn-secondary">Ver Perfil</a>
                         <a href="treino.html?id=${clientId}" class="btn">Ver Treino</a>
-                        <button class="btn btn-danger" data-id="${clientId}">Excluir</button>
                     </div>
                 </div>
             `;
             clientList.innerHTML += card;
         });
-
-        document.querySelectorAll('.btn-danger').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
-                if (confirm('Tem certeza que deseja excluir este cliente?')) {
-                    db.collection('clientes').doc(id).delete()
-                        .catch(error => console.error("Erro ao excluir cliente:", error));
-                }
-            });
-        });
+        // Lógica de exclusão foi removida daqui
     });
 }
 
-// --- LÓGICA DA PÁGINA DE PERFIL (COM NOVOS CAMPOS) ---
+// --- LÓGICA DA PÁGINA DE PERFIL (COM BOTÃO DE EXCLUIR) ---
 function initPerfilPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -100,20 +90,21 @@ function initPerfilPage() {
     const profileForm = document.getElementById('profile-form');
     const nameInput = document.getElementById('profile-name');
     const objectiveInput = document.getElementById('profile-objective');
-    const complaintsInput = document.getElementById('profile-complaints'); // Novo
-    const diagnosisInput = document.getElementById('profile-diagnosis'); // Novo
+    const complaintsInput = document.getElementById('profile-complaints');
+    const diagnosisInput = document.getElementById('profile-diagnosis');
     const notesInput = document.getElementById('profile-notes');
     const successMessage = document.getElementById('success-message');
+    const deleteButton = document.getElementById('delete-client-button'); // <-- Pega o novo botão
 
-    // Carrega os dados do cliente e preenche o formulário
+    // Carrega os dados do cliente
     db.collection('clientes').doc(clienteId).get().then(doc => {
         if (doc.exists) {
             const client = doc.data();
             profileHeader.innerHTML = `<h2>Perfil de ${client.nome}</h2>`;
             nameInput.value = client.nome;
             objectiveInput.value = client.objetivo;
-            complaintsInput.value = client.queixas || ''; // Novo
-            diagnosisInput.value = client.diagnostico || ''; // Novo
+            complaintsInput.value = client.queixas || '';
+            diagnosisInput.value = client.diagnostico || '';
             notesInput.value = client.observacoes || '';
         } else {
             alert('Cliente não encontrado!');
@@ -128,8 +119,8 @@ function initPerfilPage() {
         const updatedData = {
             nome: nameInput.value,
             objetivo: objectiveInput.value,
-            queixas: complaintsInput.value, // Novo
-            diagnostico: diagnosisInput.value, // Novo
+            queixas: complaintsInput.value,
+            diagnostico: diagnosisInput.value,
             observacoes: notesInput.value
         };
 
@@ -147,12 +138,27 @@ function initPerfilPage() {
                 alert("Ocorreu um erro ao salvar. Tente novamente.");
             });
     });
+
+    // NOVA LÓGICA DE EXCLUSÃO
+    deleteButton.addEventListener('click', () => {
+        const clientName = nameInput.value;
+        if (confirm(`ATENÇÃO: Você está prestes a excluir permanentemente o cliente "${clientName}".\n\nTodos os dados, incluindo os treinos, serão perdidos.\n\nDeseja continuar?`)) {
+            db.collection('clientes').doc(clienteId).delete()
+                .then(() => {
+                    alert(`Cliente "${clientName}" excluído com sucesso.`);
+                    window.location.href = 'dashboard.html';
+                })
+                .catch(error => {
+                    console.error("Erro ao excluir cliente:", error);
+                    alert("Ocorreu um erro ao excluir o cliente.");
+                });
+        }
+    });
 }
 
+// --- Funções initExerciciosPage e initTreinoPage continuam as mesmas ---
 
-// --- LÓGICA DA PÁGINA DE BIBLIOTECA DE EXERCÍCIOS ---
 function initExerciciosPage() {
-    // (Esta função continua a mesma)
     const form = document.getElementById('add-base-exercise-form');
     const exerciseListDiv = document.getElementById('base-exercise-list');
 
@@ -197,10 +203,7 @@ function deleteBaseExercise(id) {
     }
 }
 
-
-// --- LÓGICA DA PÁGINA DE TREINO ---
 function initTreinoPage() {
-    // (Esta função continua a mesma)
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
     if (!clienteId) {
