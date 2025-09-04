@@ -70,6 +70,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 
@@ -86,40 +88,24 @@ document.addEventListener('DOMContentLoaded', () => {
             statusDiv.textContent = '⚠️ Por favor, selecione um arquivo CSV primeiro.';
             return;
         }
-
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-            const csvData = event.target.result;
-            // Usando uma biblioteca externa (PapaParse) seria mais robusto,
-            // mas para este caso, um parser simples deve funcionar.
-            const lines = csvData.split('\\n').filter(line => line.trim() !== '');
-            if (lines.length <= 1) {
-                statusDiv.textContent = '⚠️ O arquivo CSV está vazio ou inválido.';
-                return;
-            }
-            
-            const headers = lines[0].split(',').map(h => h.trim());
-            const clients = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                // Parser simples: não lida com vírgulas dentro dos valores
-                const values = lines[i].split(',');
-                const client = {};
-                for(let j=0; j < headers.length; j++) {
-                    client[headers[j]] = values[j] ? values[j].trim() : '';
+        
+        // Usando PapaParse para ler o arquivo de forma robusta
+        Papa.parse(file, {
+            header: true, // A primeira linha é o cabeçalho
+            skipEmptyLines: true,
+            complete: function(results) {
+                if (results.data && results.data.length > 0) {
+                    importClients(results.data);
+                } else {
+                    statusDiv.textContent = '⚠️ O arquivo CSV está vazio ou é inválido.';
+                    console.error('Erros de parsing:', results.errors);
                 }
-                clients.push(client);
+            },
+            error: function(error) {
+                statusDiv.textContent = '❌ Erro ao ler o arquivo CSV.';
+                console.error(error);
             }
-            
-            importClients(clients);
-        };
-
-        reader.onerror = function() {
-            statusDiv.textContent = '❌ Erro ao ler o arquivo.';
-        };
-
-        reader.readAsText(file);
+        });
     });
 
     async function importClients(clients) {
@@ -131,8 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let successCount = 0;
         let errorCount = 0;
 
-        for (let i = 0; i < clients.length; i++) {
-            const client = clients[i];
+        for (const client of clients) {
             const clientData = {
                 nome: client.nome || 'Nome não informado',
                 objetivo: client.objetivo || '',
@@ -152,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados. ${errorCount > 0 ? `${errorCount} falharam.` : ''}`;
+        statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`;
         importButton.disabled = false;
         fileInput.value = ''; // Limpa o input
     }
