@@ -7,61 +7,30 @@
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilos adicionais para a página de importação */
-        .container {
-            max-width: 600px;
-        }
-        .import-box {
-            background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-        }
-        .import-box h2 {
-            margin-bottom: 1.5rem;
-        }
-        #csv-file-input {
-            display: block;
-            margin: 1.5rem auto;
-            border: 2px dashed var(--border-color);
-            padding: 2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-        #csv-file-input:hover {
-            border-color: var(--orange);
-        }
-        #import-status {
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            min-height: 20px;
-        }
+        .container { max-width: 600px; }
+        .import-box { background-color: var(--card-bg); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; }
+        .import-box h2 { margin-bottom: 1.5rem; }
+        #csv-file-input { display: block; margin: 1.5rem auto; border: 2px dashed var(--border-color); padding: 2rem; border-radius: 8px; cursor: pointer; color: var(--text-secondary); }
+        #csv-file-input:hover { border-color: var(--orange); }
+        #import-status { margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); min-height: 20px; }
+        .button-group { display: flex; gap: 1rem; justify-content: center; }
     </style>
 </head>
 <body>
 <header>
-    <div class="header-logo">
-        <img src="logo.png" alt="Logo Reativare">
-        <h1>Reativare</h1>
-    </div>
-    <div>
-        <a href="dashboard.html" class="btn btn-secondary">Voltar ao Dashboard</a>
-        <button id="logout-button" class="btn btn-secondary">Sair</button>
-    </div>
+    <div class="header-logo"> <img src="logo.png" alt="Logo Reativare"> <h1>Reativare</h1> </div>
+    <div> <a href="dashboard.html" class="btn btn-secondary">Voltar ao Dashboard</a> <button id="logout-button" class="btn btn-secondary">Sair</button> </div>
 </header>
 
 <main class="container">
     <div class="import-box">
-        <h2>Importar Clientes via CSV</h2>
-        <p>Selecione o arquivo <code>clientes_importar.csv</code> para adicionar múltiplos clientes de uma só vez.</p>
-        
+        <h2>Importar / Depurar Clientes</h2>
+        <p>Selecione um arquivo CSV para validar ou importar.</p>
         <input type="file" id="csv-file-input" accept=".csv">
-        
-        <button id="import-button" class="btn">Importar Clientes</button>
-
+        <div class="button-group">
+            <button id="debug-button" class="btn btn-secondary">Depurar CSV</button>
+            <button id="import-button" class="btn">Importar para o Banco</button>
+        </div>
         <p id="import-status"></p>
     </div>
 </main>
@@ -69,35 +38,31 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const importButton = document.getElementById('import-button');
+    const debugButton = document.getElementById('debug-button');
     const fileInput = document.getElementById('csv-file-input');
     const statusDiv = document.getElementById('import-status');
 
-    importButton.addEventListener('click', () => {
+    function parseCsv(callback) {
         const file = fileInput.files[0];
-
         if (!file) {
             statusDiv.textContent = '⚠️ Por favor, selecione um arquivo CSV primeiro.';
             return;
         }
-        
-        // Usando PapaParse para ler o arquivo de forma robusta
         Papa.parse(file, {
-            header: true, // A primeira linha é o cabeçalho
+            header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 if (results.data && results.data.length > 0) {
-                    importClients(results.data);
+                    callback(results.data);
                 } else {
-                    statusDiv.textContent = '⚠️ O arquivo CSV está vazio ou é inválido.';
+                    statusDiv.textContent = '⚠️ O arquivo CSV parece vazio ou é inválido.';
                     console.error('Erros de parsing:', results.errors);
                 }
             },
@@ -106,17 +71,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(error);
             }
         });
+    }
+
+    debugButton.addEventListener('click', () => {
+        statusDiv.textContent = 'Analisando o arquivo... Verifique o console do navegador.';
+        parseCsv(clients => {
+            console.clear();
+            console.log('--- DADOS DE DEPURACAO DO CSV ---');
+            console.log(`O arquivo tem ${clients.length} clientes.`);
+            console.log('Abaixo estão os dados do primeiro cliente, como o sistema os leu:');
+            console.table(clients[0]);
+            console.log('Se os campos e valores acima estiverem corretos, a importação funcionará.');
+            console.log('--- FIM DA DEPURACAO ---');
+            statusDiv.textContent = 'Depuração concluída! Verifique o console (F12) para ver os resultados.';
+        });
+    });
+
+    importButton.addEventListener('click', () => {
+        parseCsv(clients => {
+            importClients(clients);
+        });
     });
 
     async function importClients(clients) {
-        if (!confirm(`Você está prestes a importar ${clients.length} clientes. Deseja continuar?`)) {
+        if (!confirm(`Você está prestes a importar ${clients.length} clientes. Os dados parecem corretos na depuração?`)) {
             return;
         }
-
         importButton.disabled = true;
+        debugButton.disabled = true;
         let successCount = 0;
         let errorCount = 0;
-
         for (const client of clients) {
             const clientData = {
                 nome: client.nome || 'Nome não informado',
@@ -126,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 observacoes: client.observacoes || '',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-
             try {
                 await db.collection('clientes').add(clientData);
                 successCount++;
@@ -136,10 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorCount++;
             }
         }
-
         statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`;
         importButton.disabled = false;
-        fileInput.value = ''; // Limpa o input
+        debugButton.disabled = false;
+        fileInput.value = '';
     }
 });
 </script>
