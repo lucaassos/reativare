@@ -13,7 +13,6 @@
         #csv-file-input { display: block; margin: 1.5rem auto; border: 2px dashed var(--border-color); padding: 2rem; border-radius: 8px; cursor: pointer; color: var(--text-secondary); }
         #csv-file-input:hover { border-color: var(--orange); }
         #import-status { margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); min-height: 20px; }
-        .button-group { display: flex; gap: 1rem; justify-content: center; }
     </style>
 </head>
 <body>
@@ -24,13 +23,10 @@
 
 <main class="container">
     <div class="import-box">
-        <h2>Importar / Depurar Clientes</h2>
-        <p>Selecione um arquivo CSV para validar ou importar.</p>
+        <h2>Importar Clientes via CSV</h2>
+        <p>Selecione o arquivo <code>clientes_importar.csv</code> para adicionar múltiplos clientes de uma só vez.</p>
         <input type="file" id="csv-file-input" accept=".csv">
-        <div class="button-group">
-            <button id="debug-button" class="btn btn-secondary">Depurar CSV</button>
-            <button id="import-button" class="btn">Importar para o Banco</button>
-        </div>
+        <button id="import-button" class="btn">Importar Clientes</button>
         <p id="import-status"></p>
     </div>
 </main>
@@ -45,24 +41,24 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const importButton = document.getElementById('import-button');
-    const debugButton = document.getElementById('debug-button');
     const fileInput = document.getElementById('csv-file-input');
     const statusDiv = document.getElementById('import-status');
 
-    function parseCsv(callback) {
+    importButton.addEventListener('click', () => {
         const file = fileInput.files[0];
         if (!file) {
             statusDiv.textContent = '⚠️ Por favor, selecione um arquivo CSV primeiro.';
             return;
         }
+        
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 if (results.data && results.data.length > 0) {
-                    callback(results.data);
+                    importClients(results.data);
                 } else {
-                    statusDiv.textContent = '⚠️ O arquivo CSV parece vazio ou é inválido.';
+                    statusDiv.textContent = '⚠️ O arquivo CSV está vazio ou é inválido. Verifique se guardou o ficheiro corretamente.';
                     console.error('Erros de parsing:', results.errors);
                 }
             },
@@ -71,57 +67,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(error);
             }
         });
-    }
-
-    debugButton.addEventListener('click', () => {
-        statusDiv.textContent = 'Analisando o arquivo... Verifique o console do navegador.';
-        parseCsv(clients => {
-            console.clear();
-            console.log('--- DADOS DE DEPURACAO DO CSV ---');
-            console.log(`O arquivo tem ${clients.length} clientes.`);
-            console.log('Abaixo estão os dados do primeiro cliente, como o sistema os leu:');
-            console.table(clients[0]);
-            console.log('Se os campos e valores acima estiverem corretos, a importação funcionará.');
-            console.log('--- FIM DA DEPURACAO ---');
-            statusDiv.textContent = 'Depuração concluída! Verifique o console (F12) para ver os resultados.';
-        });
-    });
-
-    importButton.addEventListener('click', () => {
-        parseCsv(clients => {
-            importClients(clients);
-        });
     });
 
     async function importClients(clients) {
-        if (!confirm(`Você está prestes a importar ${clients.length} clientes. Os dados parecem corretos na depuração?`)) {
+        // Antes de importar, limpe os clientes antigos para evitar duplicados
+        if (!confirm(`Você está prestes a APAGAR todos os ${clients.length} clientes existentes para importar a nova lista. Deseja continuar?`)) {
             return;
         }
+
         importButton.disabled = true;
-        debugButton.disabled = true;
-        let successCount = 0;
-        let errorCount = 0;
-        for (const client of clients) {
-            const clientData = {
-                nome: client.nome || 'Nome não informado',
-                objetivo: client.objetivo || '',
-                queixas: client.queixas || '',
-                diagnostico: client.diagnostico || '',
-                observacoes: client.observacoes || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            try {
-                await db.collection('clientes').add(clientData);
-                successCount++;
-                statusDiv.textContent = `Importando... ${successCount} de ${clients.length} clientes adicionados.`;
-            } catch (error) {
-                console.error("Erro ao importar cliente:", client.nome, error);
-                errorCount++;
+        statusDiv.textContent = 'Apagando clientes antigos...';
+
+        try {
+            const snapshot = await db.collection('clientes').get();
+            const deletePromises = [];
+            snapshot.forEach(doc => {
+                deletePromises.push(doc.ref.delete());
+            });
+            await Promise.all(deletePromises);
+            
+            statusDiv.textContent = 'Clientes antigos apagados. Iniciando importação...';
+            
+            let successCount = 0;
+            let errorCount = 0;
+            for (const client of clients) {
+                const clientData = {
+                    nome: client.nome || 'Nome não informado',
+                    objetivo: client.objetivo || '',
+                    queixas: client.queixas || '',
+                    diagnostico: client.diagnostico || '',
+                    observacoes: client.observacoes || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                try {
+                    await db.collection('clientes').add(clientData);
+                    successCount++;
+                    statusDiv.textContent = `Importando... ${successCount} de ${clients.length} clientes adicionados.`;
+                } catch (importError) {
+                    console.error("Erro ao importar cliente:", client.nome, importError);
+                    errorCount++;
+                }
             }
+            statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`;
+        } catch (clearError) {
+            statusDiv.textContent = '❌ Erro ao apagar os clientes antigos. A importação foi cancelada.';
+            console.error(clearError);
         }
-        statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`;
+
         importButton.disabled = false;
-        debugButton.disabled = false;
         fileInput.value = '';
     }
 });
