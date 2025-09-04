@@ -13,6 +13,7 @@
         #csv-file-input { display: block; margin: 1.5rem auto; border: 2px dashed var(--border-color); padding: 2rem; border-radius: 8px; cursor: pointer; color: var(--text-secondary); }
         #csv-file-input:hover { border-color: var(--orange); }
         #import-status { margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); min-height: 20px; }
+        #debug-output { margin-top: 1rem; text-align: left; background-color: #111; padding: 1rem; border-radius: 8px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -23,100 +24,63 @@
 
 <main class="container">
     <div class="import-box">
-        <h2>Importar Clientes via CSV</h2>
-        <p>Selecione o arquivo <code>clientes_importar.csv</code> para adicionar múltiplos clientes de uma só vez.</p>
+        <h2>Diagnóstico de Importação</h2>
+        <p>Use o ficheiro <code>clientes_importar.csv</code> criado manualmente.</p>
         <input type="file" id="csv-file-input" accept=".csv">
-        <button id="import-button" class="btn">Importar Clientes</button>
+        <button id="debug-button" class="btn btn-secondary">Analisar Ficheiro CSV</button>
         <p id="import-status"></p>
+        <div id="debug-output" style="display:none;"></div>
     </div>
 </main>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script src="firebase-config.js"></script>
-<script src="auth.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const importButton = document.getElementById('import-button');
+    const debugButton = document.getElementById('debug-button');
     const fileInput = document.getElementById('csv-file-input');
     const statusDiv = document.getElementById('import-status');
+    const debugOutput = document.getElementById('debug-output');
 
-    importButton.addEventListener('click', () => {
+    debugButton.addEventListener('click', () => {
         const file = fileInput.files[0];
         if (!file) {
-            statusDiv.textContent = '⚠️ Por favor, selecione um arquivo CSV primeiro.';
+            statusDiv.textContent = '⚠️ Por favor, selecione um ficheiro CSV primeiro.';
             return;
         }
-        
+
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
+            delimiter: ",", // Força o uso da vírgula como separador
             complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    importClients(results.data);
-                } else {
-                    statusDiv.textContent = '⚠️ O arquivo CSV está vazio ou é inválido. Verifique se guardou o ficheiro corretamente.';
-                    console.error('Erros de parsing:', results.errors);
+                statusDiv.textContent = 'Análise completa. Veja o resultado abaixo.';
+                debugOutput.style.display = 'block';
+
+                let outputHtml = '<h3>Resultado da Análise</h3>';
+                outputHtml += `<p><strong>Clientes encontrados:</strong> ${results.data.length}</p>`;
+                
+                if (results.errors.length > 0) {
+                    outputHtml += `<p><strong>Erros encontrados:</strong> ${results.errors.length}</p>`;
+                    outputHtml += `<pre>${JSON.stringify(results.errors, null, 2)}</pre>`;
                 }
+
+                if (results.data.length > 0) {
+                    outputHtml += '<p><strong>Cabeçalhos detetados (meta):</strong></p>';
+                    outputHtml += `<pre>${JSON.stringify(results.meta.fields, null, 2)}</pre>`;
+                    outputHtml += '<p><strong>Dados do primeiro cliente:</strong></p>';
+                    outputHtml += `<pre>${JSON.stringify(results.data[0], null, 2)}</pre>`;
+                }
+                
+                debugOutput.innerHTML = outputHtml;
             },
             error: function(error) {
-                statusDiv.textContent = '❌ Erro ao ler o arquivo CSV.';
-                console.error(error);
+                statusDiv.textContent = '❌ Erro crítico ao ler o ficheiro.';
+                debugOutput.style.display = 'block';
+                debugOutput.innerHTML = `<pre>${error.toString()}</pre>`;
             }
         });
     });
-
-    async function importClients(clients) {
-        // Antes de importar, limpe os clientes antigos para evitar duplicados
-        if (!confirm(`Você está prestes a APAGAR todos os ${clients.length} clientes existentes para importar a nova lista. Deseja continuar?`)) {
-            return;
-        }
-
-        importButton.disabled = true;
-        statusDiv.textContent = 'Apagando clientes antigos...';
-
-        try {
-            const snapshot = await db.collection('clientes').get();
-            const deletePromises = [];
-            snapshot.forEach(doc => {
-                deletePromises.push(doc.ref.delete());
-            });
-            await Promise.all(deletePromises);
-            
-            statusDiv.textContent = 'Clientes antigos apagados. Iniciando importação...';
-            
-            let successCount = 0;
-            let errorCount = 0;
-            for (const client of clients) {
-                const clientData = {
-                    nome: client.nome || 'Nome não informado',
-                    objetivo: client.objetivo || '',
-                    queixas: client.queixas || '',
-                    diagnostico: client.diagnostico || '',
-                    observacoes: client.observacoes || '',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                try {
-                    await db.collection('clientes').add(clientData);
-                    successCount++;
-                    statusDiv.textContent = `Importando... ${successCount} de ${clients.length} clientes adicionados.`;
-                } catch (importError) {
-                    console.error("Erro ao importar cliente:", client.nome, importError);
-                    errorCount++;
-                }
-            }
-            statusDiv.textContent = `✅ Importação concluída! ${successCount} clientes adicionados.${errorCount > 0 ? ` ${errorCount} falharam.` : ''}`;
-        } catch (clearError) {
-            statusDiv.textContent = '❌ Erro ao apagar os clientes antigos. A importação foi cancelada.';
-            console.error(clearError);
-        }
-
-        importButton.disabled = false;
-        fileInput.value = '';
-    }
 });
 </script>
 </body>
