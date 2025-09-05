@@ -3,39 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Novo Usuário | Reativare</title>
+    <title>Cadastrar Novo Usuário | Reativare</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-box">
-            <img src="logo.png" alt="Logo Reativare" class="login-logo-main">
-            <h2>Criar Nova Conta de Usuário</h2>
-            
-            <form id="register-form">
-                <div class="input-group">
-                    <label for="email">Email do Novo Usuário</label>
-                    <input type="email" id="email" required>
-                </div>
-                <div class="input-group">
-                    <label for="password">Senha (mínimo 6 caracteres)</label>
-                    <input type="password" id="password" required>
-                </div>
-                <button type="submit" class="btn">Registrar Usuário</button>
-            </form>
-            <p id="error-message" class="error-message"></p>
-            <p id="success-message" class="success-message" style="opacity: 1;"></p>
-            <br>
-            <a href="index.html" style="color: var(--text-secondary);">Voltar para o Login</a>
-        </div>
+<header>
+    <div class="header-logo">
+        <img src="logo.png" alt="Logo Reativare">
+        <h1>Reativare</h1>
     </div>
+    <div>
+        <a href="dashboard.html" class="btn btn-secondary">Voltar ao Dashboard</a>
+        <button id="logout-button" class="btn btn-secondary">Sair</button>
+    </div>
+</header>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<main class="container">
+    <div class="card-section">
+        <h3>Cadastrar Novo Usuário do Sistema</h3>
+        <form id="register-form">
+            <div class="input-group">
+                <label for="email">Email do Novo Usuário</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Senha (mínimo 6 caracteres)</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn">Cadastrar Usuário</button>
+            <p id="error-message" class="error-message" style="height: auto; margin-top: 1rem;"></p>
+            <p id="success-message" class="success-message" style="opacity: 0; height: auto; margin-top: 1rem;"></p>
+        </form>
+    </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+
+<script>
+// Lógica de Registro de Usuário
+document.addEventListener('DOMContentLoaded', () => {
+    // Verifica se o usuário está logado antes de fazer qualquer coisa
+    firebase.auth().onAuthStateChanged(user => {
+        if (!user) {
+            // Se por algum motivo o usuário não estiver logado, auth.js já o terá redirecionado,
+            // mas esta é uma segurança extra.
+            return;
+        }
+
+        const registerForm = document.getElementById('register-form');
     
-    <script src="firebase-config.js"></script>
-    <script src="registrar.js"></script>
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const errorMessage = document.getElementById('error-message');
+                const successMessage = document.getElementById('success-message');
+
+                errorMessage.textContent = '';
+                successMessage.style.opacity = 0;
+
+                // ATENÇÃO: A criação de um novo usuário desloga o usuário atual.
+                // Esta é uma limitação de segurança do Firebase no lado do cliente.
+                // A melhor prática para múltiplos usuários seria usar Funções do Firebase (Firebase Functions),
+                // mas para uma solução simples no lado do cliente, esta é a abordagem.
+                
+                const currentUser = firebase.auth().currentUser;
+                const currentEmail = currentUser.email;
+                
+                // Esta é a forma de criar um usuário sem deslogar o atual,
+                // mas requer configuração mais complexa do lado do servidor (Admin SDK).
+                // Para o lado do cliente, a criação direta é a única opção.
+                firebase.auth().createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        successMessage.textContent = `Usuário ${email} registrado com sucesso!`;
+                        successMessage.style.opacity = 1;
+                        console.log('Usuário criado:', userCredential.user);
+                        registerForm.reset();
+
+                        // O Firebase desloga o admin e loga o novo usuário.
+                        // Para contornar isso, precisamos deslogar o novo usuário e logar o admin de volta.
+                        // Esta não é uma experiência ideal e pode ser complexa.
+                        // Uma solução mais simples é apenas notificar o admin.
+                        alert("Usuário criado com sucesso. Você foi deslogado. Por favor, faça login novamente.");
+                        firebase.auth().signOut();
+
+                    })
+                    .catch((error) => {
+                        let msg = 'Ocorreu um erro. Tente novamente.';
+                        if (error.code == 'auth/weak-password') {
+                            msg = 'A senha é muito fraca. Use pelo menos 6 caracteres.';
+                        } else if (error.code == 'auth/email-already-in-use') {
+                            msg = 'Este email já está em uso por outro usuário.';
+                        } else if (error.code == 'auth/invalid-email') {
+                            msg = 'O formato do email é inválido.';
+                        }
+                        errorMessage.textContent = msg;
+                        console.error("Erro no registro:", error);
+                    });
+            });
+        }
+    });
+});
+</script>
+
 </body>
 </html>
