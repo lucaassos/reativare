@@ -545,3 +545,29 @@ header div {
         margin-bottom: 1rem;
     }
 }
+
+/* --- ESTILOS PARA BUSCA DE EXERCÍCIO --- */
+.exercise-search-results {
+    border: 2px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background-color: var(--dark-bg);
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* Começa escondido */
+}
+
+.exercise-search-results .result-item {
+    padding: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.exercise-search-results .result-item:hover {
+    background-color: var(--border-color);
+}
+
+.exercise-search-results .result-item:last-child {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
