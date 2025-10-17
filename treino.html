@@ -50,10 +50,11 @@
                 <h4>Adicionar Exercício ao Plano</h4>
                 <div class="form-grid">
                     <div class="input-group">
-                        <label>Selecione o Exercício</label>
-                        <select class="exercise-select" required>
-                            <option value="">Carregando...</option>
-                        </select>
+                        <label>Pesquisar Exercício</label>
+                        <input type="text" id="exercise-search" class="exercise-search" placeholder="Digite para buscar..." autocomplete="off">
+                        <div id="exercise-search-results" class="exercise-search-results"></div>
+                        <input type="hidden" id="selected-exercise-id">
+                        <input type="hidden" id="selected-exercise-name">
                     </div>
                     <div class="input-group">
                         <label>Séries</label>
