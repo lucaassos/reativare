@@ -273,24 +273,76 @@ function initTreinoPage() {
         workoutContent.innerHTML = '';
         const templateNode = dayTemplate.content.cloneNode(true);
         
-        const exerciseSelect = templateNode.querySelector('.exercise-select');
-        exerciseSelect.innerHTML = '<option value="">Selecione um exercício</option>';
-        baseExercises.forEach(ex => {
-            exerciseSelect.innerHTML += `<option value="${ex.id}" data-name="${ex.nome}">${ex.nome}</option>`;
-        });
-        
-        const exerciseListDiv = templateNode.querySelector('.exercise-list');
-        const addExerciseForm = templateNode.querySelector('.add-exercise-form');
-
-        addExerciseForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
-            const exerciseBaseId = selectedOption.value;
-            const exerciseName = selectedOption.getAttribute('data-name');
-            if (!exerciseBaseId) {
-                alert("Por favor, selecione um exercício.");
+        // --- INÍCIO DA NOVA LÓGICA DE BUSCA ---
+        const searchInput = templateNode.querySelector('#exercise-search');
+        const searchResultsDiv = templateNode.querySelector('#exercise-search-results');
+        const selectedExerciseIdInput = templateNode.querySelector('#selected-exercise-id');
+        const selectedExerciseNameInput = templateNode.querySelector('#selected-exercise-name');
+    
+        // Evento de digitação no campo de busca
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            searchResultsDiv.innerHTML = '';
+            selectedExerciseIdInput.value = ''; // Limpa o ID se o usuário digitar novamente
+    
+            if (query.length < 2) {
+                searchResultsDiv.style.display = 'none';
                 return;
             }
+    
+            const filteredExercises = baseExercises.filter(ex => ex.nome.toLowerCase().includes(query));
+    
+            if (filteredExercises.length > 0) {
+                filteredExercises.forEach(ex => {
+                    const item = document.createElement('div');
+                    item.className = 'result-item';
+                    item.textContent = ex.nome;
+                    item.dataset.id = ex.id;
+                    item.dataset.name = ex.nome;
+                    searchResultsDiv.appendChild(item);
+                });
+                searchResultsDiv.style.display = 'block';
+            } else {
+                searchResultsDiv.style.display = 'none';
+            }
+        });
+    
+        // Evento de clique em um resultado
+        searchResultsDiv.addEventListener('click', (e) => {
+            if (e.target.classList.contains('result-item')) {
+                const exerciseId = e.target.dataset.id;
+                const exerciseName = e.target.dataset.name;
+    
+                searchInput.value = exerciseName; // Preenche o input com o nome
+                selectedExerciseIdInput.value = exerciseId; // Guarda o ID no input escondido
+                selectedExerciseNameInput.value = exerciseName; // Guarda o nome no input escondido
+                searchResultsDiv.style.display = 'none'; // Esconde a lista
+                searchResultsDiv.innerHTML = ''; // Limpa os resultados
+            }
+        });
+    
+        // Esconder resultados se clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.matches('.exercise-search, .result-item')) {
+                searchResultsDiv.style.display = 'none';
+            }
+        });
+    
+        // --- FIM DA NOVA LÓGICA DE BUSCA ---
+    
+        const exerciseListDiv = templateNode.querySelector('.exercise-list');
+        const addExerciseForm = templateNode.querySelector('.add-exercise-form');
+    
+        addExerciseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const exerciseBaseId = selectedExerciseIdInput.value;
+            const exerciseName = selectedExerciseNameInput.value;
+    
+            if (!exerciseBaseId) {
+                alert("Por favor, selecione um exercício da lista.");
+                return;
+            }
+            
             const exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
@@ -300,10 +352,13 @@ function initTreinoPage() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
-                .then(() => addExerciseForm.reset())
+                .then(() => {
+                    addExerciseForm.reset();
+                    searchInput.value = ''; // Limpa o campo de busca também
+                })
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
         });
-
+    
         db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
             if (snapshot.empty) {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
@@ -319,7 +374,7 @@ function initTreinoPage() {
                     const now = new Date();
                     const diffMinutes = (now.getTime() - exerciseTime.getTime()) / (1000 * 60);
 
-                    if (diffMinutes > 5) {
+                    if (diffMinutes > 5) { // Se o exercício foi adicionado há mais de 5 minutos (ajuste conforme necessário)
                         alertIconHTML = `
                             <div class="alert-icon" title="Considere aumentar a carga para este exercício.">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -344,7 +399,7 @@ function initTreinoPage() {
             });
             tableHTML += '</tbody></table>';
             exerciseListDiv.innerHTML = tableHTML;
-
+    
             exerciseListDiv.querySelectorAll('.btn-danger').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const exerciseId = e.target.getAttribute('data-id');
@@ -352,7 +407,7 @@ function initTreinoPage() {
                 });
             });
         });
-
+    
         workoutContent.appendChild(templateNode);
     }
 }
