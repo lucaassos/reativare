@@ -1,15 +1,13 @@
-
 const firebaseConfig = {
-  apiKey: "AIzaSyDiWDy54Gphn2kopi07yGGdbxgKK62bC4s",
-  authDomain: "reativare-109ec.firebaseapp.com",
-  projectId: "reativare-109ec",
-  storageBucket: "reativare-109ec.firebasestorage.app",
-  messagingSenderId: "667339560747",
-  appId: "1:667339560747:web:2d36c156df5f5eb2b7576e"
+  apiKey: "AIzaSyDOIv-6Bv-6XCNxL5A6JjVmSyVhmK8riu8",
+  authDomain: "reativareapp.firebaseapp.com",
+  projectId: "reativareapp",
+  storageBucket: "reativareapp.firebasestorage.app",
+  messagingSenderId: "510544843755",
+  appId: "1:510544843755:web:cce16e5940d782135fbfae"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 
 var auth = firebase.auth();
 var db = firebase.firestore();
