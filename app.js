@@ -22,7 +22,7 @@ function initDashboard() {
     const addClientForm = document.getElementById('add-client-form');
     const searchBar = document.getElementById('search-bar');
 
-    let allClients = []; 
+    let allClients = [];
 
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
@@ -55,7 +55,7 @@ function initDashboard() {
         });
         renderClients(allClients);
     });
-    
+
     searchBar.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
         const filteredClients = allClients.filter(client => {
@@ -63,7 +63,7 @@ function initDashboard() {
         });
         renderClients(filteredClients);
     });
-    
+
     function renderClients(clients) {
         clientList.innerHTML = '';
         if (clients.length === 0) {
@@ -244,8 +244,9 @@ function initTreinoPage() {
         snapshot.forEach(doc => {
             baseExercises.push({ id: doc.id, ...doc.data() });
         });
-        
-        const dayMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+        // Mapa dos dias da semana (0=Domingo, 1=Segunda, etc.)
+        const dayMap = ['segunda', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'segunda'];
         const todayIndex = new Date().getDay();
         const todayName = dayMap[todayIndex];
 
@@ -253,9 +254,10 @@ function initTreinoPage() {
         if (todayTab) {
             todayTab.classList.add('active');
         } else {
+            // Fallback para segunda-feira caso algo dê errado
             document.querySelector('.tab-link[data-day="segunda"]').classList.add('active');
         }
-        
+
         loadContentForDay(todayName);
     });
 
@@ -271,25 +273,25 @@ function initTreinoPage() {
     function loadContentForDay(dayId) {
         workoutContent.innerHTML = '';
         const templateNode = dayTemplate.content.cloneNode(true);
-        
+
         const searchInput = templateNode.querySelector('#exercise-search');
         const searchResultsDiv = templateNode.querySelector('#exercise-search-results');
         const selectedExerciseIdInput = templateNode.querySelector('#selected-exercise-id');
         const selectedExerciseNameInput = templateNode.querySelector('#selected-exercise-name');
         const selectedExerciseTypeInput = templateNode.querySelector('#selected-exercise-type');
-    
+
         searchInput.addEventListener('input', () => {
             const query = searchInput.value.toLowerCase();
             searchResultsDiv.innerHTML = '';
             selectedExerciseIdInput.value = '';
-    
+
             if (query.length < 2) {
                 searchResultsDiv.style.display = 'none';
                 return;
             }
-    
+
             const filteredExercises = baseExercises.filter(ex => ex.nome.toLowerCase().includes(query));
-    
+
             if (filteredExercises.length > 0) {
                 filteredExercises.forEach(ex => {
                     const item = document.createElement('div');
@@ -305,18 +307,18 @@ function initTreinoPage() {
                 searchResultsDiv.style.display = 'none';
             }
         });
-    
+
         searchResultsDiv.addEventListener('click', (e) => {
             if (e.target.classList.contains('result-item')) {
                 const exerciseId = e.target.dataset.id;
                 const exerciseName = e.target.dataset.name;
                 const exerciseType = e.target.dataset.type;
-    
+
                 searchInput.value = exerciseName;
                 selectedExerciseIdInput.value = exerciseId;
                 selectedExerciseNameInput.value = exerciseName;
                 selectedExerciseTypeInput.value = exerciseType;
-                
+
                 const repsFields = workoutContent.querySelector('.reps-fields');
                 const timeFields = workoutContent.querySelector('.time-fields');
 
@@ -332,27 +334,27 @@ function initTreinoPage() {
                 searchResultsDiv.innerHTML = '';
             }
         });
-    
+
         document.addEventListener('click', (e) => {
             if (!e.target.matches('.exercise-search, .result-item')) {
                 if (searchResultsDiv) searchResultsDiv.style.display = 'none';
             }
         });
-    
+
         const exerciseListDiv = templateNode.querySelector('.exercise-list');
         const addExerciseForm = templateNode.querySelector('.add-exercise-form');
-    
+
         addExerciseForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const exerciseBaseId = selectedExerciseIdInput.value;
             const exerciseName = selectedExerciseNameInput.value;
             const exerciseType = selectedExerciseTypeInput.value;
-    
+
             if (!exerciseBaseId) {
                 alert("Por favor, selecione um exercício da lista.");
                 return;
             }
-            
+
             let exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
@@ -378,7 +380,7 @@ function initTreinoPage() {
                 })
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
         });
-    
+
         db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').orderBy('createdAt').onSnapshot(snapshot => {
             if (snapshot.empty) {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
@@ -387,7 +389,7 @@ function initTreinoPage() {
             let tableHTML = `<table><thead><tr><th>Exercício</th><th>Detalhe 1</th><th>Detalhe 2</th><th>Detalhe 3</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
-                
+
                 let detailsHTML = '';
                 if (ex.tipo === 'time') {
                     detailsHTML = `
@@ -402,14 +404,14 @@ function initTreinoPage() {
                         <td><strong>Carga:</strong> ${ex.carga || '-'}</td>
                     `;
                 }
-                
+
                 let alertIconHTML = '';
                 if (ex.createdAt && ex.tipo !== 'time') {
                     const exerciseTime = ex.createdAt.toDate();
                     const now = new Date();
                     const diffDays = (now.getTime() - exerciseTime.getTime()) / (1000 * 3600 * 24);
 
-                    if (diffDays > 7) { 
+                    if (diffDays > 7) {
                         alertIconHTML = `
                             <div class="alert-icon" title="Considere aumentar a carga para este exercício.">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -420,7 +422,7 @@ function initTreinoPage() {
                         `;
                     }
                 }
-                
+
                 tableHTML += `
                     <tr>
                         <td>${ex.nomeExercicio}</td>
@@ -432,7 +434,7 @@ function initTreinoPage() {
             });
             tableHTML += '</tbody></table>';
             exerciseListDiv.innerHTML = tableHTML;
-    
+
             exerciseListDiv.querySelectorAll('.btn-danger').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const exerciseId = e.target.getAttribute('data-id');
@@ -440,7 +442,7 @@ function initTreinoPage() {
                 });
             });
         });
-    
+
         workoutContent.appendChild(templateNode);
     }
 }
