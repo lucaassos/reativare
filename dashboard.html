@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treino | Reativare</title>
+    <title>Dashboard | Reativare</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="shortcut icon" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
@@ -19,77 +19,53 @@
         <h1>Reativare</h1>
     </div>
     <div>
-        <a href="dashboard.html" class="btn btn-secondary">Voltar ao Dashboard</a>
+        <a href="registrar.html" class="btn btn-outline">+ Usuário</a>
+        <a href="exercicios.html" class="btn btn-secondary">Biblioteca de Exercícios</a>
         <button id="logout-button" class="btn btn-secondary">Sair</button>
     </div>
 </header>
 
     <main class="container">
-        <div id="client-header" class="card-section">
+        <div class="toolbar">
+            <h2>Meus Clientes</h2>
+            <div class="search-container">
+                <input type="text" id="search-bar" placeholder="Pesquisar cliente por nome...">
             </div>
-
-        <div class="tabs-container">
-            <div class="tabs-nav">
-                <button class="tab-link" data-day="segunda">Segunda</button>
-                <button class="tab-link" data-day="terca">Terça</button>
-                <button class="tab-link" data-day="quarta">Quarta</button>
-                <button class="tab-link" data-day="quinta">Quinta</button>
-                <button class="tab-link" data-day="sexta">Sexta</button>
-                <button class="tab-link" data-day="sabado">Sábado</button>
-                <button class="tab-link" data-day="domingo">Domingo</button>
-            </div>
-
-            <div id="workout-content" class="card-section">
-                </div>
+            <button id="add-client-button" class="btn btn-outline">Adicionar Cliente</button>
         </div>
+        <div id="client-list" class="client-list">
+            </div>
     </main>
 
-    <template id="day-template">
-        <div class="tab-content">
-            <form class="add-exercise-form">
-                <h4>Adicionar Exercício ao Plano</h4>
-                <div class="form-grid">
-                     <div class="input-group">
-                        <label>Pesquisar Exercício</label>
-                        <input type="text" id="exercise-search" class="exercise-search" placeholder="Digite para buscar..." autocomplete="off">
-                        <div id="exercise-search-results" class="exercise-search-results"></div>
-                        <input type="hidden" id="selected-exercise-id">
-                        <input type="hidden" id="selected-exercise-name">
-                        <input type="hidden" id="selected-exercise-type">
-                    </div>
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Novo Cliente</h2>
+            <form id="add-client-form">
+                <div class="input-group">
+                    <label for="client-name">Nome Completo</label>
+                    <input type="text" id="client-name" required>
                 </div>
-
-                <div class="form-grid reps-fields">
-                    <div class="input-group">
-                        <label>Séries</label>
-                        <input type="text" class="exercise-series">
-                    </div>
-                    <div class="input-group">
-                        <label>Repetições</label>
-                        <input type="text" class="exercise-reps">
-                    </div>
-                    <div class="input-group">
-                        <label>Carga</label>
-                        <input type="text" class="exercise-load">
-                    </div>
+                <div class="input-group">
+                    <label for="client-objective">Objetivo</label>
+                    <input type="text" id="client-objective" required>
                 </div>
-
-                <div class="form-grid time-fields" style="display: none;">
-                    <div class="input-group">
-                        <label>Duração (ex: 20 min)</label>
-                        <input type="text" class="exercise-duration">
-                    </div>
-                    <div class="input-group">
-                        <label>Intensidade (ex: Nível 5)</label>
-                        <input type="text" class="exercise-intensity">
-                    </div>
+                <div class="input-group">
+                    <label for="client-complaints">Queixas Principais</label>
+                    <textarea id="client-complaints" rows="3"></textarea>
                 </div>
-                <button type="submit" class="btn">Adicionar Exercício</button>
+                <div class="input-group">
+                    <label for="client-diagnosis">Diagnóstico Clínico / Funcional</label>
+                    <textarea id="client-diagnosis" rows="3"></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="client-notes">Observações Gerais</label>
+                    <textarea id="client-notes" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn">Salvar Cliente</button>
             </form>
-            <div class="exercise-list">
-                </div>
         </div>
-    </template>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
