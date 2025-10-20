@@ -44,6 +44,37 @@
 
     <template id="day-template">
         <div class="tab-content">
+            <div class="evolution-section">
+                <h4>Evolução do Dia</h4>
+                <form class="evolution-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Pressão Arterial (PA)</label>
+                            <input type="text" class="evolution-pa" placeholder="ex: 120/80">
+                        </div>
+                        <div class="input-group">
+                            <label>Freq. Cardíaca (FC)</label>
+                            <input type="text" class="evolution-fc" placeholder="ex: 80 bpm">
+                        </div>
+                        <div class="input-group">
+                            <label>Saturação (SpO2)</label>
+                            <input type="text" class="evolution-spo2" placeholder="ex: 98%">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Observações / Evolução do Dia</label>
+                        <textarea class="evolution-notes" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn">Salvar Evolução</button>
+                </form>
+                <div class="evolution-history">
+                    <h5>Histórico de Evolução</h5>
+                    <div class="evolution-list"></div>
+                </div>
+            </div>
+
+            <hr style="margin: 2.5rem 0; border-color: var(--border-color);">
+
             <form class="add-exercise-form">
                 <h4>Adicionar Exercício ao Plano</h4>
                 <div class="form-grid">
