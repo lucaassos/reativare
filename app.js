@@ -24,7 +24,7 @@ function initDashboard() {
     const addClientForm = document.getElementById('add-client-form');
     const searchBar = document.getElementById('search-bar');
 
-    let allClients = []; 
+    let allClients = [];
 
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
@@ -57,7 +57,7 @@ function initDashboard() {
         });
         renderClients(allClients);
     });
-    
+
     searchBar.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
         const filteredClients = allClients.filter(client => {
@@ -65,7 +65,7 @@ function initDashboard() {
         });
         renderClients(filteredClients);
     });
-    
+
     function renderClients(clients) {
         clientList.innerHTML = '';
         if (clients.length === 0) {
@@ -174,9 +174,12 @@ function initExerciciosPage() {
         e.preventDefault();
         const nome = document.getElementById('base-exercise-name').value;
         const grupo = document.getElementById('base-exercise-group').value;
+        const tipo = document.getElementById('base-exercise-type').value;
+
         db.collection('exercicios_base').add({
             nome: nome,
             grupoMuscular: grupo,
+            tipo: tipo,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             form.reset();
@@ -188,13 +191,14 @@ function initExerciciosPage() {
             exerciseListDiv.innerHTML = "<p>Nenhum exercício na biblioteca.</p>";
             return;
         }
-        let html = '<table><thead><tr><th>Exercício</th><th>Grupo Muscular</th><th>Ação</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>Exercício</th><th>Grupo Muscular</th><th>Tipo</th><th>Ação</th></tr></thead><tbody>';
         snapshot.forEach(doc => {
             const ex = doc.data();
             html += `
                 <tr>
                     <td>${ex.nome}</td>
                     <td>${ex.grupoMuscular}</td>
+                    <td>${ex.tipo === 'time' ? 'Tempo' : 'Repetições'}</td>
                     <td><button class="btn btn-danger btn-sm" onclick="deleteBaseExercise('${doc.id}')">Excluir</button></td>
                 </tr>
             `;
@@ -243,20 +247,17 @@ function initTreinoPage() {
             baseExercises.push({ id: doc.id, ...doc.data() });
         });
         
-        // --- LÓGICA PARA ABRIR NO DIA ATUAL ---
         const dayMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const todayIndex = new Date().getDay();
         const todayName = dayMap[todayIndex];
 
-        // Ativa a aba do dia atual
         const todayTab = document.querySelector(`.tab-link[data-day="${todayName}"]`);
         if (todayTab) {
             todayTab.classList.add('active');
         } else {
-            document.querySelector('.tab-link[data-day="segunda"]').classList.add('active'); // Fallback para segunda
+            document.querySelector('.tab-link[data-day="segunda"]').classList.add('active');
         }
         
-        // Carrega o conteúdo do dia atual
         loadContentForDay(todayName);
     });
 
@@ -273,17 +274,16 @@ function initTreinoPage() {
         workoutContent.innerHTML = '';
         const templateNode = dayTemplate.content.cloneNode(true);
         
-        // --- INÍCIO DA NOVA LÓGICA DE BUSCA ---
         const searchInput = templateNode.querySelector('#exercise-search');
         const searchResultsDiv = templateNode.querySelector('#exercise-search-results');
         const selectedExerciseIdInput = templateNode.querySelector('#selected-exercise-id');
         const selectedExerciseNameInput = templateNode.querySelector('#selected-exercise-name');
+        const selectedExerciseTypeInput = templateNode.querySelector('#selected-exercise-type');
     
-        // Evento de digitação no campo de busca
         searchInput.addEventListener('input', () => {
             const query = searchInput.value.toLowerCase();
             searchResultsDiv.innerHTML = '';
-            selectedExerciseIdInput.value = ''; // Limpa o ID se o usuário digitar novamente
+            selectedExerciseIdInput.value = '';
     
             if (query.length < 2) {
                 searchResultsDiv.style.display = 'none';
@@ -299,6 +299,7 @@ function initTreinoPage() {
                     item.textContent = ex.nome;
                     item.dataset.id = ex.id;
                     item.dataset.name = ex.nome;
+                    item.dataset.type = ex.tipo || 'reps';
                     searchResultsDiv.appendChild(item);
                 });
                 searchResultsDiv.style.display = 'block';
@@ -307,28 +308,38 @@ function initTreinoPage() {
             }
         });
     
-        // Evento de clique em um resultado
         searchResultsDiv.addEventListener('click', (e) => {
             if (e.target.classList.contains('result-item')) {
                 const exerciseId = e.target.dataset.id;
                 const exerciseName = e.target.dataset.name;
+                const exerciseType = e.target.dataset.type;
     
-                searchInput.value = exerciseName; // Preenche o input com o nome
-                selectedExerciseIdInput.value = exerciseId; // Guarda o ID no input escondido
-                selectedExerciseNameInput.value = exerciseName; // Guarda o nome no input escondido
-                searchResultsDiv.style.display = 'none'; // Esconde a lista
-                searchResultsDiv.innerHTML = ''; // Limpa os resultados
+                searchInput.value = exerciseName;
+                selectedExerciseIdInput.value = exerciseId;
+                selectedExerciseNameInput.value = exerciseName;
+                selectedExerciseTypeInput.value = exerciseType;
+                
+                const repsFields = workoutContent.querySelector('.reps-fields');
+                const timeFields = workoutContent.querySelector('.time-fields');
+
+                if (exerciseType === 'time') {
+                    repsFields.style.display = 'none';
+                    timeFields.style.display = 'grid';
+                } else {
+                    repsFields.style.display = 'grid';
+                    timeFields.style.display = 'none';
+                }
+
+                searchResultsDiv.style.display = 'none';
+                searchResultsDiv.innerHTML = '';
             }
         });
     
-        // Esconder resultados se clicar fora
         document.addEventListener('click', (e) => {
             if (!e.target.matches('.exercise-search, .result-item')) {
                 searchResultsDiv.style.display = 'none';
             }
         });
-    
-        // --- FIM DA NOVA LÓGICA DE BUSCA ---
     
         const exerciseListDiv = templateNode.querySelector('.exercise-list');
         const addExerciseForm = templateNode.querySelector('.add-exercise-form');
@@ -337,24 +348,35 @@ function initTreinoPage() {
             e.preventDefault();
             const exerciseBaseId = selectedExerciseIdInput.value;
             const exerciseName = selectedExerciseNameInput.value;
+            const exerciseType = selectedExerciseTypeInput.value;
     
             if (!exerciseBaseId) {
                 alert("Por favor, selecione um exercício da lista.");
                 return;
             }
             
-            const exerciseData = {
+            let exerciseData = {
                 exercicioBaseId: exerciseBaseId,
                 nomeExercicio: exerciseName,
-                series: addExerciseForm.querySelector('.exercise-series').value,
-                repeticoes: addExerciseForm.querySelector('.exercise-reps').value,
-                carga: addExerciseForm.querySelector('.exercise-load').value,
+                tipo: exerciseType,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+
+            if (exerciseType === 'time') {
+                exerciseData.duracao = addExerciseForm.querySelector('.exercise-duration').value;
+                exerciseData.intensidade = addExerciseForm.querySelector('.exercise-intensity').value;
+            } else {
+                exerciseData.series = addExerciseForm.querySelector('.exercise-series').value;
+                exerciseData.repeticoes = addExerciseForm.querySelector('.exercise-reps').value;
+                exerciseData.carga = addExerciseForm.querySelector('.exercise-load').value;
+            }
+
             db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
                 .then(() => {
                     addExerciseForm.reset();
-                    searchInput.value = ''; // Limpa o campo de busca também
+                    searchInput.value = '';
+                    workoutContent.querySelector('.reps-fields').style.display = 'grid';
+                    workoutContent.querySelector('.time-fields').style.display = 'none';
                 })
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
         });
@@ -364,17 +386,32 @@ function initTreinoPage() {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Séries</th><th>Repetições</th><th>Carga</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
+            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Detalhe 1</th><th>Detalhe 2</th><th>Detalhe 3</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
                 
+                let detailsHTML = '';
+                if (ex.tipo === 'time') {
+                    detailsHTML = `
+                        <td><strong>Duração:</strong> ${ex.duracao || '-'}</td>
+                        <td><strong>Intensidade:</strong> ${ex.intensidade || '-'}</td>
+                        <td></td>
+                    `;
+                } else {
+                    detailsHTML = `
+                        <td><strong>Séries:</strong> ${ex.series || '-'}</td>
+                        <td><strong>Repetições:</strong> ${ex.repeticoes || '-'}</td>
+                        <td><strong>Carga:</strong> ${ex.carga || '-'}</td>
+                    `;
+                }
+                
                 let alertIconHTML = '';
-                if (ex.createdAt) {
+                if (ex.createdAt && ex.tipo !== 'time') {
                     const exerciseTime = ex.createdAt.toDate();
                     const now = new Date();
-                    const diffMinutes = (now.getTime() - exerciseTime.getTime()) / (1000 * 60);
+                    const diffDays = (now.getTime() - exerciseTime.getTime()) / (1000 * 3600 * 24);
 
-                    if (diffMinutes > 5) { // Se o exercício foi adicionado há mais de 5 minutos (ajuste conforme necessário)
+                    if (diffDays > 7) { 
                         alertIconHTML = `
                             <div class="alert-icon" title="Considere aumentar a carga para este exercício.">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -389,9 +426,7 @@ function initTreinoPage() {
                 tableHTML += `
                     <tr>
                         <td>${ex.nomeExercicio}</td>
-                        <td>${ex.series}</td>
-                        <td>${ex.repeticoes}</td>
-                        <td>${ex.carga || '-'}</td>
+                        ${detailsHTML}
                         <td class="alert-cell">${alertIconHTML}</td>
                         <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                     </tr>
