@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Se o usuário está logado e na página de login, redireciona para o dashboard
             if (isLoginPage) {
                 window.location.href = 'dashboard.html';
+            } else {
+                // Se o usuário está logado em uma página interna, inicia a lógica do app.js
+                // Verificamos se a função 'initializeAppLogic' existe antes de chamá-la
+                if (typeof initializeAppLogic === 'function') {
+                    initializeAppLogic(user);
+                }
             }
         } else {
             // Se o usuário não está logado e não está na página de login, redireciona para o login
