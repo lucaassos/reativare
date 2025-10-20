@@ -1,19 +1,17 @@
-document.addEventListener('DOMContentLoaded', () => {
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            const path = window.location.pathname;
-            if (path.endsWith('dashboard.html')) {
-                initDashboard();
-            } else if (path.endsWith('treino.html')) {
-                initTreinoPage();
-            } else if (path.endsWith('exercicios.html')) {
-                initExerciciosPage();
-            } else if (path.endsWith('perfil.html')) {
-                initPerfilPage();
-            }
-        }
-    });
-});
+function initializeAppLogic(user) {
+    if (!user) return; // Segurança extra
+
+    const path = window.location.pathname;
+    if (path.endsWith('dashboard.html')) {
+        initDashboard();
+    } else if (path.endsWith('treino.html')) {
+        initTreinoPage();
+    } else if (path.endsWith('exercicios.html')) {
+        initExerciciosPage();
+    } else if (path.endsWith('perfil.html')) {
+        initPerfilPage();
+    }
+}
 
 // --- LÓGICA DO DASHBOARD ---
 function initDashboard() {
@@ -24,49 +22,31 @@ function initDashboard() {
     const addClientForm = document.getElementById('add-client-form');
     const searchBar = document.getElementById('search-bar');
 
-    let allClients = [];
+    let allClients = []; 
 
-    // Verificação para garantir que o botão "Adicionar Cliente" existe
-    if (addClientButton) {
-        addClientButton.onclick = () => {
-            if (modal) modal.style.display = 'block';
-        };
-    } else {
-        console.error('Botão "add-client-button" não encontrado no HTML.');
-    }
-
-    // Verificação para garantir que o botão de fechar do modal existe
-    if (closeButton) {
-        closeButton.onclick = () => {
-            if (modal) modal.style.display = 'none';
-        };
-    } else {
-        console.error('Elemento ".close-button" não encontrado no HTML.');
-    }
-
+    addClientButton.onclick = () => modal.style.display = 'block';
+    closeButton.onclick = () => modal.style.display = 'none';
     window.onclick = (event) => {
         if (event.target == modal) {
-            if (modal) modal.style.display = 'none';
+            modal.style.display = 'none';
         }
     };
 
-    if (addClientForm) {
-        addClientForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const clientData = {
-                nome: document.getElementById('client-name').value,
-                objetivo: document.getElementById('client-objective').value,
-                queixas: document.getElementById('client-complaints').value,
-                diagnostico: document.getElementById('client-diagnosis').value,
-                observacoes: document.getElementById('client-notes').value,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            db.collection('clientes').add(clientData).then(() => {
-                if (modal) modal.style.display = 'none';
-                addClientForm.reset();
-            }).catch(error => console.error("Erro ao adicionar cliente:", error));
-        });
-    }
+    addClientForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const clientData = {
+            nome: document.getElementById('client-name').value,
+            objetivo: document.getElementById('client-objective').value,
+            queixas: document.getElementById('client-complaints').value,
+            diagnostico: document.getElementById('client-diagnosis').value,
+            observacoes: document.getElementById('client-notes').value,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        db.collection('clientes').add(clientData).then(() => {
+            modal.style.display = 'none';
+            addClientForm.reset();
+        }).catch(error => console.error("Erro ao adicionar cliente:", error));
+    });
 
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
         allClients = [];
@@ -75,19 +55,16 @@ function initDashboard() {
         });
         renderClients(allClients);
     });
-
-    if (searchBar) {
-        searchBar.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredClients = allClients.filter(client => {
-                return client.nome.toLowerCase().includes(searchTerm);
-            });
-            renderClients(filteredClients);
+    
+    searchBar.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredClients = allClients.filter(client => {
+            return client.nome.toLowerCase().includes(searchTerm);
         });
-    }
-
+        renderClients(filteredClients);
+    });
+    
     function renderClients(clients) {
-        if (!clientList) return;
         clientList.innerHTML = '';
         if (clients.length === 0) {
             clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente encontrado.</p>`;
