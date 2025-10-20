@@ -26,29 +26,47 @@ function initDashboard() {
 
     let allClients = [];
 
-    addClientButton.onclick = () => modal.style.display = 'block';
-    closeButton.onclick = () => modal.style.display = 'none';
+    // Verificação para garantir que o botão "Adicionar Cliente" existe
+    if (addClientButton) {
+        addClientButton.onclick = () => {
+            if (modal) modal.style.display = 'block';
+        };
+    } else {
+        console.error('Botão "add-client-button" não encontrado no HTML.');
+    }
+
+    // Verificação para garantir que o botão de fechar do modal existe
+    if (closeButton) {
+        closeButton.onclick = () => {
+            if (modal) modal.style.display = 'none';
+        };
+    } else {
+        console.error('Elemento ".close-button" não encontrado no HTML.');
+    }
+
     window.onclick = (event) => {
         if (event.target == modal) {
-            modal.style.display = 'none';
+            if (modal) modal.style.display = 'none';
         }
     };
 
-    addClientForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const clientData = {
-            nome: document.getElementById('client-name').value,
-            objetivo: document.getElementById('client-objective').value,
-            queixas: document.getElementById('client-complaints').value,
-            diagnostico: document.getElementById('client-diagnosis').value,
-            observacoes: document.getElementById('client-notes').value,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        db.collection('clientes').add(clientData).then(() => {
-            modal.style.display = 'none';
-            addClientForm.reset();
-        }).catch(error => console.error("Erro ao adicionar cliente:", error));
-    });
+    if (addClientForm) {
+        addClientForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const clientData = {
+                nome: document.getElementById('client-name').value,
+                objetivo: document.getElementById('client-objective').value,
+                queixas: document.getElementById('client-complaints').value,
+                diagnostico: document.getElementById('client-diagnosis').value,
+                observacoes: document.getElementById('client-notes').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection('clientes').add(clientData).then(() => {
+                if (modal) modal.style.display = 'none';
+                addClientForm.reset();
+            }).catch(error => console.error("Erro ao adicionar cliente:", error));
+        });
+    }
 
     db.collection('clientes').orderBy('nome').onSnapshot(snapshot => {
         allClients = [];
@@ -58,15 +76,18 @@ function initDashboard() {
         renderClients(allClients);
     });
 
-    searchBar.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filteredClients = allClients.filter(client => {
-            return client.nome.toLowerCase().includes(searchTerm);
+    if (searchBar) {
+        searchBar.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredClients = allClients.filter(client => {
+                return client.nome.toLowerCase().includes(searchTerm);
+            });
+            renderClients(filteredClients);
         });
-        renderClients(filteredClients);
-    });
+    }
 
     function renderClients(clients) {
+        if (!clientList) return;
         clientList.innerHTML = '';
         if (clients.length === 0) {
             clientList.innerHTML = `<p style="text-align: center;">Nenhum cliente encontrado.</p>`;
@@ -337,7 +358,7 @@ function initTreinoPage() {
     
         document.addEventListener('click', (e) => {
             if (!e.target.matches('.exercise-search, .result-item')) {
-                searchResultsDiv.style.display = 'none';
+                if (searchResultsDiv) searchResultsDiv.style.display = 'none';
             }
         });
     
