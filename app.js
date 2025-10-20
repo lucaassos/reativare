@@ -326,70 +326,42 @@ function initTreinoPage() {
         });
 
         // --- LÓGICA DOS EXERCÍCIOS ---
-        const searchInput = workoutContent.querySelector('#exercise-search');
-        const searchResultsDiv = workoutContent.querySelector('#exercise-search-results');
+        const exerciseSelect = workoutContent.querySelector('#exercise-select');
         const selectedExerciseIdInput = workoutContent.querySelector('#selected-exercise-id');
         const selectedExerciseNameInput = workoutContent.querySelector('#selected-exercise-name');
         const selectedExerciseTypeInput = workoutContent.querySelector('#selected-exercise-type');
-    
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            searchResultsDiv.innerHTML = '';
-            selectedExerciseIdInput.value = '';
-    
-            if (query.length < 2) {
-                searchResultsDiv.style.display = 'none';
-                return;
-            }
-    
-            const filteredExercises = baseExercises.filter(ex => ex.nome.toLowerCase().includes(query));
-    
-            if (filteredExercises.length > 0) {
-                filteredExercises.forEach(ex => {
-                    const item = document.createElement('div');
-                    item.className = 'result-item';
-                    item.textContent = ex.nome;
-                    item.dataset.id = ex.id;
-                    item.dataset.name = ex.nome;
-                    item.dataset.type = ex.tipo || 'reps';
-                    searchResultsDiv.appendChild(item);
-                });
-                searchResultsDiv.style.display = 'block';
+        
+        // Preenche o dropdown com os exercícios
+        baseExercises.forEach(ex => {
+            const option = document.createElement('option');
+            option.value = ex.id;
+            option.textContent = ex.nome;
+            option.dataset.type = ex.tipo || 'reps';
+            exerciseSelect.appendChild(option);
+        });
+
+        // Evento de mudança no dropdown
+        exerciseSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const exerciseId = selectedOption.value;
+            const exerciseType = selectedOption.dataset.type;
+
+            selectedExerciseIdInput.value = exerciseId;
+            selectedExerciseNameInput.value = selectedOption.textContent;
+            selectedExerciseTypeInput.value = exerciseType;
+
+            const repsFields = workoutContent.querySelector('.reps-fields');
+            const timeFields = workoutContent.querySelector('.time-fields');
+
+            if (exerciseId === "") { // Se a opção "Escolha um exercício" for selecionada
+                 repsFields.style.display = 'none';
+                 timeFields.style.display = 'none';
+            } else if (exerciseType === 'time') {
+                repsFields.style.display = 'none';
+                timeFields.style.display = 'grid';
             } else {
-                searchResultsDiv.style.display = 'none';
-            }
-        });
-    
-        searchResultsDiv.addEventListener('click', (e) => {
-            if (e.target.classList.contains('result-item')) {
-                const exerciseId = e.target.dataset.id;
-                const exerciseName = e.target.dataset.name;
-                const exerciseType = e.target.dataset.type;
-    
-                searchInput.value = exerciseName;
-                selectedExerciseIdInput.value = exerciseId;
-                selectedExerciseNameInput.value = exerciseName;
-                selectedExerciseTypeInput.value = exerciseType;
-                
-                const repsFields = workoutContent.querySelector('.reps-fields');
-                const timeFields = workoutContent.querySelector('.time-fields');
-
-                if (exerciseType === 'time') {
-                    repsFields.style.display = 'none';
-                    timeFields.style.display = 'grid';
-                } else {
-                    repsFields.style.display = 'grid';
-                    timeFields.style.display = 'none';
-                }
-
-                searchResultsDiv.style.display = 'none';
-                searchResultsDiv.innerHTML = '';
-            }
-        });
-    
-        document.addEventListener('click', (e) => {
-            if (!e.target.matches('.exercise-search, .result-item')) {
-                if (searchResultsDiv) searchResultsDiv.style.display = 'none';
+                repsFields.style.display = 'grid';
+                timeFields.style.display = 'none';
             }
         });
     
@@ -399,13 +371,14 @@ function initTreinoPage() {
         addExerciseForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const exerciseBaseId = selectedExerciseIdInput.value;
-            const exerciseName = selectedExerciseNameInput.value;
-            const exerciseType = selectedExerciseTypeInput.value;
-    
+            
             if (!exerciseBaseId) {
                 alert("Por favor, selecione um exercício da lista.");
                 return;
             }
+            
+            const exerciseName = selectedExerciseNameInput.value;
+            const exerciseType = selectedExerciseTypeInput.value;
             
             let exerciseData = {
                 exercicioBaseId: exerciseBaseId,
@@ -426,8 +399,8 @@ function initTreinoPage() {
             db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId).collection('exercicios').add(exerciseData)
                 .then(() => {
                     addExerciseForm.reset();
-                    searchInput.value = '';
-                    workoutContent.querySelector('.reps-fields').style.display = 'grid';
+                    exerciseSelect.value = ""; // Reseta o dropdown
+                    workoutContent.querySelector('.reps-fields').style.display = 'none';
                     workoutContent.querySelector('.time-fields').style.display = 'none';
                 })
                 .catch(error => console.error(`Erro ao adicionar exercício em ${dayId}:`, error));
