@@ -49,24 +49,39 @@
             <form class="add-exercise-form">
                 <h4>Adicionar Exercício ao Plano</h4>
                 <div class="form-grid">
-                    <div class="input-group">
+                     <div class="input-group">
                         <label>Pesquisar Exercício</label>
                         <input type="text" id="exercise-search" class="exercise-search" placeholder="Digite para buscar..." autocomplete="off">
                         <div id="exercise-search-results" class="exercise-search-results"></div>
                         <input type="hidden" id="selected-exercise-id">
                         <input type="hidden" id="selected-exercise-name">
+                        <input type="hidden" id="selected-exercise-type">
                     </div>
+                </div>
+
+                <div class="form-grid reps-fields">
                     <div class="input-group">
                         <label>Séries</label>
-                        <input type="text" class="exercise-series" required>
+                        <input type="text" class="exercise-series">
                     </div>
                     <div class="input-group">
                         <label>Repetições</label>
-                        <input type="text" class="exercise-reps" required>
+                        <input type="text" class="exercise-reps">
                     </div>
                     <div class="input-group">
                         <label>Carga</label>
                         <input type="text" class="exercise-load">
+                    </div>
+                </div>
+
+                <div class="form-grid time-fields" style="display: none;">
+                    <div class="input-group">
+                        <label>Duração (ex: 20 min)</label>
+                        <input type="text" class="exercise-duration">
+                    </div>
+                    <div class="input-group">
+                        <label>Intensidade (ex: Nível 5)</label>
+                        <input type="text" class="exercise-intensity">
                     </div>
                 </div>
                 <button type="submit" class="btn">Adicionar Exercício</button>
