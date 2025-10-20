@@ -22,7 +22,7 @@ function initDashboard() {
     const addClientForm = document.getElementById('add-client-form');
     const searchBar = document.getElementById('search-bar');
 
-    let allClients = []; 
+    let allClients = [];
 
     addClientButton.onclick = () => modal.style.display = 'block';
     closeButton.onclick = () => modal.style.display = 'none';
@@ -56,7 +56,7 @@ function initDashboard() {
         });
         renderClients(allClients);
     });
-    
+
     searchBar.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
         const filteredClients = allClients.filter(client => {
@@ -64,7 +64,7 @@ function initDashboard() {
         });
         renderClients(filteredClients);
     });
-    
+
     function renderClients(clients) {
         clientList.innerHTML = '';
         if (clients.length === 0) {
@@ -217,7 +217,7 @@ function deleteBaseExercise(id) {
     }
 }
 
-// --- LÓGICA DA PÁGINA DE TREINO (COM ABA DO DIA ATUAL) ---
+// --- LÓGICA DA PÁGINA DE TREINO ---
 function initTreinoPage() {
     const params = new URLSearchParams(window.location.search);
     const clienteId = params.get('id');
@@ -249,7 +249,7 @@ function initTreinoPage() {
         snapshot.forEach(doc => {
             baseExercises.push({ id: doc.id, ...doc.data() });
         });
-        
+
         const dayMap = ['segunda', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'segunda'];
         const todayIndex = new Date().getDay();
         const todayName = dayMap[todayIndex];
@@ -276,12 +276,61 @@ function initTreinoPage() {
     function loadContentForDay(dayId) {
         workoutContent.innerHTML = '';
         const templateNode = dayTemplate.content.cloneNode(true);
+        workoutContent.appendChild(templateNode);
         
-        const searchInput = templateNode.querySelector('#exercise-search');
-        const searchResultsDiv = templateNode.querySelector('#exercise-search-results');
-        const selectedExerciseIdInput = templateNode.querySelector('#selected-exercise-id');
-        const selectedExerciseNameInput = templateNode.querySelector('#selected-exercise-name');
-        const selectedExerciseTypeInput = templateNode.querySelector('#selected-exercise-type');
+        // --- LÓGICA DA EVOLUÇÃO ---
+        const evolutionForm = workoutContent.querySelector('.evolution-form');
+        const evolutionListDiv = workoutContent.querySelector('.evolution-list');
+
+        evolutionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const evolutionData = {
+                pa: evolutionForm.querySelector('.evolution-pa').value,
+                fc: evolutionForm.querySelector('.evolution-fc').value,
+                spo2: evolutionForm.querySelector('.evolution-spo2').value,
+                notas: evolutionForm.querySelector('.evolution-notes').value,
+                data: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (!evolutionData.notas && !evolutionData.pa && !evolutionData.fc && !evolutionData.spo2) {
+                alert('Preencha pelo menos um campo da evolução.');
+                return;
+            }
+
+            db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId)
+              .collection('evolucoes').add(evolutionData)
+              .then(() => {
+                  evolutionForm.reset();
+              }).catch(error => console.error("Erro ao salvar evolução:", error));
+        });
+
+        db.collection('clientes').doc(clienteId).collection('treinos').doc(dayId)
+          .collection('evolucoes').orderBy('data', 'desc').onSnapshot(snapshot => {
+            evolutionListDiv.innerHTML = '';
+            if (snapshot.empty) {
+                evolutionListDiv.innerHTML = '<p>Nenhum registro de evolução para este dia.</p>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const evo = doc.data();
+                const dataFormatada = evo.data ? evo.data.toDate().toLocaleDateString('pt-BR') : 'Data indisponível';
+                const evolutionCard = `
+                    <div class="card-section" style="margin-bottom: 1rem; background-color: #2a2a2a;">
+                        <p><strong>Data:</strong> ${dataFormatada}</p>
+                        <p><strong>PA:</strong> ${evo.pa || '-'} | <strong>FC:</strong> ${evo.fc || '-'} | <strong>SpO2:</strong> ${evo.spo2 || '-'}</p>
+                        <p><strong>Notas:</strong> ${evo.notas || 'Nenhuma.'}</p>
+                    </div>
+                `;
+                evolutionListDiv.innerHTML += evolutionCard;
+            });
+        });
+
+        // --- LÓGICA DOS EXERCÍCIOS ---
+        const searchInput = workoutContent.querySelector('#exercise-search');
+        const searchResultsDiv = workoutContent.querySelector('#exercise-search-results');
+        const selectedExerciseIdInput = workoutContent.querySelector('#selected-exercise-id');
+        const selectedExerciseNameInput = workoutContent.querySelector('#selected-exercise-name');
+        const selectedExerciseTypeInput = workoutContent.querySelector('#selected-exercise-type');
     
         searchInput.addEventListener('input', () => {
             const query = searchInput.value.toLowerCase();
@@ -344,8 +393,8 @@ function initTreinoPage() {
             }
         });
     
-        const exerciseListDiv = templateNode.querySelector('.exercise-list');
-        const addExerciseForm = templateNode.querySelector('.add-exercise-form');
+        const exerciseListDiv = workoutContent.querySelector('.exercise-list');
+        const addExerciseForm = workoutContent.querySelector('.add-exercise-form');
     
         addExerciseForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -389,7 +438,7 @@ function initTreinoPage() {
                 exerciseListDiv.innerHTML = "<p>Nenhum exercício cadastrado para este dia.</p>";
                 return;
             }
-            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Detalhe 1</th><th>Detalhe 2</th><th>Detalhe 3</th><th>Alerta</th><th>Ação</th></tr></thead><tbody>`;
+            let tableHTML = `<table><thead><tr><th>Exercício</th><th>Detalhe 1</th><th>Detalhe 2</th><th>Detalhe 3</th><th>Ação</th></tr></thead><tbody>`;
             snapshot.forEach(doc => {
                 const ex = doc.data();
                 
@@ -408,29 +457,10 @@ function initTreinoPage() {
                     `;
                 }
                 
-                let alertIconHTML = '';
-                if (ex.createdAt && ex.tipo !== 'time') {
-                    const exerciseTime = ex.createdAt.toDate();
-                    const now = new Date();
-                    const diffDays = (now.getTime() - exerciseTime.getTime()) / (1000 * 3600 * 24);
-
-                    if (diffDays > 7) { 
-                        alertIconHTML = `
-                            <div class="alert-icon" title="Considere aumentar a carga para este exercício.">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                    <path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/>
-                                </svg>
-                                <span class="tooltip">Considere aumentar a carga.</span>
-                            </div>
-                        `;
-                    }
-                }
-                
                 tableHTML += `
                     <tr>
                         <td>${ex.nomeExercicio}</td>
                         ${detailsHTML}
-                        <td class="alert-cell">${alertIconHTML}</td>
                         <td><button class="btn btn-danger btn-sm" data-id="${doc.id}">Excluir</button></td>
                     </tr>
                 `;
@@ -445,7 +475,5 @@ function initTreinoPage() {
                 });
             });
         });
-    
-        workoutContent.appendChild(templateNode);
     }
 }
